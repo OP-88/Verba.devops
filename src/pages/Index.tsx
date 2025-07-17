@@ -7,6 +7,7 @@ import SavedTranscripts from '@/components/SavedTranscripts';
 import RemindersNotes from '@/components/RemindersNotes';
 import StudySpot from '@/components/StudySpot';
 import DonateButton from '@/components/DonateButton';
+import FloatingAIChat from '@/components/FloatingAIChat';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -43,7 +44,8 @@ const Index = () => {
 
   return (
     <>
-      <DonateButton />
+      {/* Conditionally show FloatingAIChat only in StudySpot, DonateButton everywhere else */}
+      {currentPage === 'studyspot' ? <FloatingAIChat /> : <DonateButton />}
 
       {(() => {
         switch (currentPage) {

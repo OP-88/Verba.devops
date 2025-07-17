@@ -5,7 +5,6 @@ import { ThemeToggle } from './ThemeToggle';
 import SyncToCloudSection from './SyncToCloudSection';
 import DeviceFirstMessage from './DeviceFirstMessage';
 import ProfileButton from './ProfileButton';
-import FloatingAIChat from './FloatingAIChat';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -68,20 +67,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
             <p className="text-muted-foreground">AI-Powered Meeting Transcription</p>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Online/Offline Status */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
               {isOnline ? (
-                <Wifi className="w-5 h-5 text-green-500" />
+                <Wifi className="w-4 h-4 text-green-500" />
               ) : (
-                <WifiOff className="w-5 h-5 text-red-500" />
+                <WifiOff className="w-4 h-4 text-red-500" />
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {isOnline ? 'Online' : 'Offline'}
               </span>
             </div>
             
-            <div className="flex flex-col items-center space-y-2">
+            <div className="flex items-center space-x-2">
               <ProfileButton />
               <ThemeToggle />
             </div>
@@ -109,9 +108,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
         {/* Device First Message - moved to bottom */}
         <DeviceFirstMessage />
       </div>
-      
-      {/* Floating AI Chat */}
-      <FloatingAIChat />
     </div>
   );
 };
