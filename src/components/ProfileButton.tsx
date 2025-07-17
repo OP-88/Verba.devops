@@ -1,31 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ProfileModal from './ProfileModal';
 
-interface ProfileButtonProps {
-  isVisible: boolean;
-}
+const ProfileButton: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-const ProfileButton: React.FC<ProfileButtonProps> = ({ isVisible }) => {
   const handleProfileClick = () => {
-    // Implementation for profile functionality would go here
-    console.log('Profile clicked');
+    setIsModalOpen(true);
   };
 
-  if (!isVisible) return null;
-
   return (
-    <div className="fixed top-6 right-20 z-40">
+    <>
       <Button
         onClick={handleProfileClick}
         variant="outline"
         size="icon"
-        className="rounded-full w-12 h-12 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent/50"
+        className="rounded-full w-10 h-10"
       >
-        <User className="h-5 w-5" />
+        <User className="h-4 w-4" />
         <span className="sr-only">Profile</span>
       </Button>
-    </div>
+      
+      <ProfileModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
+    </>
   );
 };
 

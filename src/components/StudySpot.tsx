@@ -221,9 +221,17 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
             )}
           </div>
 
-          {/* Right Column - AI Chat */}
+          {/* Right Column - Study Resources */}
           <div className="lg:col-span-1">
-            <AIChatArea onShowSidebar={() => setShowChatSidebar(true)} />
+            <Card>
+              <CardContent className="p-8 text-center">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg font-medium mb-2">Need Help?</p>
+                <p className="text-muted-foreground">
+                  Use the floating chat button to ask questions about your transcripts and get AI assistance
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

@@ -4,6 +4,8 @@ import DashboardCard from './DashboardCard';
 import { ThemeToggle } from './ThemeToggle';
 import SyncToCloudSection from './SyncToCloudSection';
 import DeviceFirstMessage from './DeviceFirstMessage';
+import ProfileButton from './ProfileButton';
+import FloatingAIChat from './FloatingAIChat';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -79,7 +81,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
               </span>
             </div>
             
-            <ThemeToggle />
+            <div className="flex flex-col items-center space-y-2">
+              <ProfileButton />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 
@@ -104,6 +109,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
         {/* Device First Message - moved to bottom */}
         <DeviceFirstMessage />
       </div>
+      
+      {/* Floating AI Chat */}
+      <FloatingAIChat />
     </div>
   );
 };

@@ -7,7 +7,6 @@ import SavedTranscripts from '@/components/SavedTranscripts';
 import RemindersNotes from '@/components/RemindersNotes';
 import StudySpot from '@/components/StudySpot';
 import DonateButton from '@/components/DonateButton';
-import ProfileButton from '@/components/ProfileButton';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -44,7 +43,6 @@ const Index = () => {
 
   return (
     <>
-      <ProfileButton isVisible={currentPage === 'dashboard'} />
       <DonateButton />
 
       {(() => {
