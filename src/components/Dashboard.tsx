@@ -83,9 +83,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
           </div>
         </div>
 
-        {/* Device First Message */}
-        <DeviceFirstMessage />
-
         {/* Sync to Cloud Section */}
         <SyncToCloudSection isOnline={isOnline} />
 
@@ -103,6 +100,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
             />
           ))}
         </div>
+
+        {/* Device First Message - moved to bottom */}
+        <DeviceFirstMessage />
       </div>
     </div>
   );

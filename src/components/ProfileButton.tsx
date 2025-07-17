@@ -15,7 +15,7 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isVisible }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-6 right-6 z-40">
+    <div className="fixed top-6 right-20 z-40">
       <Button
         onClick={handleProfileClick}
         variant="outline"

@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import AIChatArea from './AIChatArea';
+import AIChatSidebar from './AIChatSidebar';
 
 interface StudySpotProps {
   onBack: () => void;
@@ -22,6 +24,7 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
   const [selectedTranscript, setSelectedTranscript] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [studySession, setStudySession] = useState<StudySession | null>(null);
+  const [showChatSidebar, setShowChatSidebar] = useState(false);
   
   // Mock transcripts
   const availableTranscripts = [
@@ -58,9 +61,14 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
     }, 2000);
   };
 
+  const handleSelectChat = (chatId: string) => {
+    console.log('Selected chat:', chatId);
+    setShowChatSidebar(false);
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-8">
           <Button
@@ -77,9 +85,9 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:col-span-1">
             {/* Transcript Selection */}
             <Card>
               <CardHeader>
@@ -137,8 +145,8 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
             </Card>
           </div>
 
-          {/* Right Column - Results */}
-          <div className="space-y-6">
+          {/* Middle Column - Results */}
+          <div className="space-y-6 lg:col-span-1">
             {studySession ? (
               <>
                 {/* Summary */}
@@ -212,8 +220,20 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
               </Card>
             )}
           </div>
+
+          {/* Right Column - AI Chat */}
+          <div className="lg:col-span-1">
+            <AIChatArea onShowSidebar={() => setShowChatSidebar(true)} />
+          </div>
         </div>
       </div>
+      
+      {/* AI Chat Sidebar */}
+      <AIChatSidebar 
+        isOpen={showChatSidebar}
+        onClose={() => setShowChatSidebar(false)}
+        onSelectChat={handleSelectChat}
+      />
     </div>
   );
 };
