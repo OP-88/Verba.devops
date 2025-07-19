@@ -1,16 +1,25 @@
-import React from 'react';
-import { Cloud, CloudOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Cloud, CloudOff, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface SyncToCloudSectionProps {
   isOnline: boolean;
 }
 
 const SyncToCloudSection: React.FC<SyncToCloudSectionProps> = ({ isOnline }) => {
-  const handleSyncToCloud = () => {
-    // Implementation for cloud sync would go here
-    console.log('Syncing to cloud...');
+  const cloudServices = [
+    { name: 'Google Drive', icon: '📁' },
+    { name: 'Dropbox', icon: '📦' },
+    { name: 'OneDrive', icon: '☁️' },
+    { name: 'iCloud Drive', icon: '🍎' },
+    { name: 'Nextcloud', icon: '🔒' }
+  ];
+
+  const handleSyncToCloud = (service?: string) => {
+    const serviceName = service || 'cloud';
+    console.log(`Syncing to ${serviceName}...`);
   };
 
   return (
@@ -34,14 +43,32 @@ const SyncToCloudSection: React.FC<SyncToCloudSectionProps> = ({ isOnline }) => 
             </div>
           </div>
           
-          <Button 
-            onClick={handleSyncToCloud}
-            disabled={!isOnline}
-            variant="outline"
-            size="sm"
-          >
-            {isOnline ? 'Sync Now' : 'Offline'}
-          </Button>
+          {isOnline ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  Sync Now
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {cloudServices.map((service) => (
+                  <DropdownMenuItem
+                    key={service.name}
+                    onClick={() => handleSyncToCloud(service.name)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="text-lg">{service.icon}</span>
+                    {service.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Offline
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
