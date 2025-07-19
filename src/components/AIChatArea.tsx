@@ -70,27 +70,29 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
   }, [messages]);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+    <div className="h-full flex flex-col">
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg">
+          <div className="flex items-center text-lg font-semibold">
             <Bot className="h-5 w-5 mr-2 text-primary" />
             AI Assistant
-          </CardTitle>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={onShowSidebar}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-background hover:bg-accent"
           >
             <History className="h-4 w-4" />
             Past Chats
           </Button>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="flex-1 flex flex-col p-4 pt-0">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
+      {/* Scrollable Messages Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -139,24 +141,27 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
           </div>
         </ScrollArea>
         
-        <div className="flex gap-2 mt-4">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your transcripts..."
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isTyping}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        {/* Fixed Input Area */}
+        <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 shadow-sm">
+          <div className="flex gap-2">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about your transcripts..."
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || isTyping}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
