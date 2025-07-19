@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cloud, CloudOff, ChevronDown } from 'lucide-react';
+import { Cloud, CloudOff, ChevronDown, HardDrive, Droplets, Box, Apple, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -10,11 +10,11 @@ interface SyncToCloudSectionProps {
 
 const SyncToCloudSection: React.FC<SyncToCloudSectionProps> = ({ isOnline }) => {
   const cloudServices = [
-    { name: 'Google Drive', icon: '📁' },
-    { name: 'Dropbox', icon: '📦' },
-    { name: 'OneDrive', icon: '☁️' },
-    { name: 'iCloud Drive', icon: '🍎' },
-    { name: 'Nextcloud', icon: '🔒' }
+    { name: 'Google Drive', Icon: HardDrive },
+    { name: 'Dropbox', Icon: Box },
+    { name: 'OneDrive', Icon: Cloud },
+    { name: 'iCloud Drive', Icon: Apple },
+    { name: 'Nextcloud', Icon: Shield }
   ];
 
   const handleSyncToCloud = (service?: string) => {
@@ -52,16 +52,19 @@ const SyncToCloudSection: React.FC<SyncToCloudSectionProps> = ({ isOnline }) => 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                {cloudServices.map((service) => (
-                  <DropdownMenuItem
-                    key={service.name}
-                    onClick={() => handleSyncToCloud(service.name)}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <span className="text-lg">{service.icon}</span>
-                    {service.name}
-                  </DropdownMenuItem>
-                ))}
+                {cloudServices.map((service) => {
+                  const IconComponent = service.Icon;
+                  return (
+                    <DropdownMenuItem
+                      key={service.name}
+                      onClick={() => handleSyncToCloud(service.name)}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      {service.name}
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

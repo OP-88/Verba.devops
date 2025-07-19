@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Mic, MicOff, Square, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LiveMeetingProps {
   onBack: () => void;
@@ -13,10 +14,58 @@ const LiveMeeting: React.FC<LiveMeetingProps> = ({ onBack, isOnline }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [transcript, setTranscript] = useState('');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll effect for transcript
+  useEffect(() => {
+    if (scrollAreaRef.current && transcript) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+    }
+  }, [transcript]);
+
+  // Simulate live transcript updates when recording
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isRecording && !isPaused) {
+      const sampleTexts = [
+        "Welcome everyone to today's meeting.",
+        "Let's start by discussing the quarterly results.",
+        "As you can see from the data presented...",
+        "The growth numbers are quite impressive this quarter.",
+        "Moving on to our next agenda item...",
+        "I'd like to hear everyone's thoughts on this proposal.",
+        "Let's take a moment to review the timeline.",
+        "Are there any questions or concerns about this approach?",
+        "Thank you for your input on this matter.",
+        "Let's schedule a follow-up meeting to discuss next steps."
+      ];
+      
+      let textIndex = 0;
+      interval = setInterval(() => {
+        if (textIndex < sampleTexts.length) {
+          setTranscript(prev => {
+            const newText = prev + (prev ? ' ' : '') + sampleTexts[textIndex];
+            return newText;
+          });
+          textIndex++;
+        }
+      }, 3000); // Add new text every 3 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording, isPaused]);
 
   const handleStartRecording = () => {
     setIsRecording(true);
     setIsPaused(false);
+    setTranscript(''); // Clear previous transcript
     // Start recording logic would go here
   };
 
@@ -29,6 +78,7 @@ const LiveMeeting: React.FC<LiveMeetingProps> = ({ onBack, isOnline }) => {
     setIsRecording(false);
     setIsPaused(false);
     setRecordingTime(0);
+    // Keep transcript visible after stopping
     // Stop recording logic would go here
   };
 
@@ -111,17 +161,33 @@ const LiveMeeting: React.FC<LiveMeetingProps> = ({ onBack, isOnline }) => {
             <CardTitle>Live Transcript</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="min-h-[300px] p-4 bg-muted/30 rounded-lg">
-              {isRecording ? (
-                <div className="text-center text-muted-foreground">
-                  {isPaused ? 'Recording paused...' : 'Listening for speech...'}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  Start recording to see live transcription
-                </div>
-              )}
-            </div>
+            <ScrollArea ref={scrollAreaRef} className="h-[400px] w-full">
+              <div className="p-4 bg-muted/30 rounded-lg min-h-[350px]">
+                {transcript ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                      {transcript}
+                    </p>
+                    {isRecording && !isPaused && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-muted-foreground">Recording...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      {isRecording ? (
+                        isPaused ? 'Recording paused...' : 'Listening for speech...'
+                      ) : (
+                        'Start recording to see live transcription'
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
