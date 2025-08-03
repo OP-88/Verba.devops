@@ -22,7 +22,7 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
       id: '1',
       type: 'ai',
       content: 'Hello! I\'m your AI assistant. I can help you analyze your transcripts, answer questions, and provide insights. How can I help you today?',
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -36,7 +36,7 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
       id: Date.now().toString(),
       type: 'user',
       content: inputMessage,
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, newUserMessage]);
@@ -49,7 +49,7 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
         id: (Date.now() + 1).toString(),
         type: 'ai',
         content: 'I understand your question. Based on the transcript analysis, here are my insights: ' + inputMessage.substring(0, 100) + '... This is a simulated response for demonstration purposes.',
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, aiResponse]);
       setIsTyping(false);
@@ -117,8 +117,8 @@ const AIChatArea: React.FC<AIChatAreaProps> = ({ onShowSidebar }) => {
                       <User className="h-4 w-4 mt-0.5" />
                     )}
                     <div className="flex-1">
-                      <p className="text-sm">{message.content}</p>
-                      <span className="text-xs opacity-70 mt-1 block">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                      <span className="text-xs opacity-70 mt-2 block">
                         {message.timestamp}
                       </span>
                     </div>
