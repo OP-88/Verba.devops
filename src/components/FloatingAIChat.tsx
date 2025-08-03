@@ -20,10 +20,10 @@ const FloatingAIChat: React.FC = () => {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="rounded-full w-14 h-14 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200"
+          className="rounded-full pl-4 pr-6 h-14 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-3"
         >
-          <MessageCircle className="h-6 w-6" />
-          <span className="sr-only">Open AI Chat</span>
+          <MessageCircle className="h-5 w-5" />
+          <span className="text-sm font-medium">AI Assistant</span>
         </Button>
       </div>
     );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, BookOpen, Brain, MessageSquare, Lightbulb, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AISummaryModal from './AISummaryModal';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ interface StudySession {
 }
 
 const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedTranscript, setSelectedTranscript] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [studySession, setStudySession] = useState<StudySession | null>(null);
@@ -150,15 +152,16 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
             {studySession ? (
               <>
                 {/* Summary */}
-                <Card>
+                <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setShowSummaryModal(true)}>
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Brain className="h-5 w-5 mr-2" />
                       AI Summary
+                      <span className="ml-auto text-xs text-muted-foreground">Click to expand</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-muted-foreground leading-relaxed line-clamp-3">
                       {studySession.summary}
                     </p>
                   </CardContent>
@@ -223,18 +226,18 @@ const StudySpot: React.FC<StudySpotProps> = ({ onBack }) => {
 
           {/* Right Column - Study Resources */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">Need Help?</p>
-                <p className="text-muted-foreground">
-                  Use the floating chat button to ask questions about your transcripts and get AI assistance
-                </p>
-              </CardContent>
-            </Card>
+            {/* This space can be used for additional study tools or resources */}
           </div>
         </div>
       </div>
+      
+      {/* AI Summary Modal */}
+      <AISummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        summary={studySession?.summary || ''}
+        title="AI Summary"
+      />
       
       {/* AI Chat Sidebar */}
       <AIChatSidebar 
