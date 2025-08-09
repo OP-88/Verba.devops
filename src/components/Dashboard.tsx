@@ -2,6 +2,7 @@ import React from 'react';
 import { Mic, Upload, FileText, Bell, BookOpen, Wifi, WifiOff } from 'lucide-react';
 import DashboardCard from './DashboardCard';
 import { ThemeToggle } from './ThemeToggle';
+import SyncToCloudSection from './SyncToCloudSection';
 import DeviceFirstMessage from './DeviceFirstMessage';
 import ProfileButton from './ProfileButton';
 
@@ -86,6 +87,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate, isOnline }) => {
           </div>
         </div>
 
+
+        {/* Sync to Cloud Section */}
+        <SyncToCloudSection isOnline={isOnline} />
 
         {/* Main Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
