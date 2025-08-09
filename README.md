@@ -1,73 +1,58 @@
-# Welcome to your Lovable project
+# Verba: Offline-First Audio Transcription System
 
-## Project info
+## Overview
 
-**URL**: https://lovable.dev/projects/19e1dfd1-76f4-4e5d-a72d-8987b2d4783b
+Verba is an open-source, AI-powered meeting assistant for transcribing, summarizing, and storing notes from lectures and meetings. It runs offline on low-spec devices (4GB RAM) using Whisper, RNNoise, and Hugging Face Transformers. Verba is free, sustained by voluntary donations, and designed for students, professionals, and low-resource settings.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Real-Time Transcription**: Converts audio to text using OpenAI Whisper.
+- **Offline Mode**: Fully functional without internet.
+- **Summarization**: Generates concise summaries with Hugging Face Transformers.
+- **Noise Reduction**: Cleans audio with RNNoise.
+- **Note Storage**: Saves transcripts and summaries locally.
+- **Simple UI**: Built with React, Vite, TypeScript, shadcn-ui, and Tailwind CSS.
 
-**Use Lovable**
+## Installation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/19e1dfd1-76f4-4e5d-a72d-8987b2d4783b) and start prompting.
+1. Clone the repo: `git clone https://github.com/marc-254/hello-world-wizardry-time.git`
+2. Install UI dependencies: `cd hello-world-wizardry-time && npm i`
+3. Install backend dependencies: `pip install -r backend/requirements.txt`
+4. Run the UI: `npm run dev`
+5. Run the backend: `cd backend && uvicorn main:app --host 0.0.0.0 --port 8000`
 
-Changes made via Lovable will be committed automatically to this repo.
+**Requirements**:
 
-**Use your preferred IDE**
+- Node.js, npm (UI)
+- Python 3.8+, Whisper, transformers, RNNoise (backend)
+- Minimum 4GB RAM
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Usage
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Open the UI at `http://localhost:5173`.
+2. Select input mode (mic for physical meetings, system audio for online).
+3. Start transcription with the “Record” button or `Ctrl+T`.
+4. View real-time transcripts and summaries.
+5. Save notes locally or toggle hybrid mode (v1.2).
 
-Follow these steps:
+## Project Status
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **UI**: 99% complete (React-based shell with dark mode, mode toggle).
+- **Backend**: In progress (Whisper Tiny, RNNoise, summarization).
+- **Timeline**: Aug 20–Sept 23, 2025 (see [docs/timeline.md](docs/timeline.md)).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Contributing
 
-# Step 3: Install the necessary dependencies.
-npm i
+We welcome feedback! Please:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- Open issues for bugs or suggestions.
+- Submit pull requests with clear descriptions.
+- Test on low-spec devices or noisy environments.
 
-**Edit a file directly in GitHub**
+## License
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+MIT License
 
-**Use GitHub Codespaces**
+## Contact
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/19e1dfd1-76f4-4e5d-a72d-8987b2d4783b) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Developed by Mark Munene. Reach out via GitHub Issues.
