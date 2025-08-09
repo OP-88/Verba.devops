@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, File, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, File, Loader2, Play, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import PreviouslyImportedFiles from './PreviouslyImportedFiles';
 
 interface ImportAudioProps {
   onBack: () => void;
@@ -141,6 +142,16 @@ const ImportAudio: React.FC<ImportAudioProps> = ({ onBack, isOnline }) => {
             </CardContent>
           </Card>
         )}
+
+        {/* Previously Imported Files */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Previously Imported Files</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PreviouslyImportedFiles />
+          </CardContent>
+        </Card>
 
         {/* Offline Message */}
         {!isOnline && (

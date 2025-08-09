@@ -19,6 +19,31 @@ const SyncToCloudSection: React.FC<SyncToCloudSectionProps> = ({ isOnline }) => 
   const handleSyncToCloud = (service?: string) => {
     const serviceName = service || 'cloud';
     console.log(`Syncing to ${serviceName}...`);
+    
+    // Implement actual sync functionality based on service
+    switch (service) {
+      case 'Google Drive':
+        // Integrate with Google Drive API
+        window.open('https://drive.google.com', '_blank');
+        break;
+      case 'Dropbox':
+        // Integrate with Dropbox API
+        window.open('https://dropbox.com', '_blank');
+        break;
+      case 'OneDrive':
+        // Integrate with OneDrive API
+        window.open('https://onedrive.live.com', '_blank');
+        break;
+      case 'Nextcloud':
+        // Show Nextcloud server input modal
+        const server = prompt('Enter your Nextcloud server URL:');
+        if (server) {
+          console.log(`Connecting to Nextcloud server: ${server}`);
+        }
+        break;
+      default:
+        console.log('Generic cloud sync');
+    }
   };
 
   return (

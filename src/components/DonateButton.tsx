@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 
 const DonateButton: React.FC = () => {
   const handleDonateClick = () => {
-    // Implementation for donation functionality would go here
-    console.log('Donate clicked');
+    // Open Buy Me a Coffee link in a new tab
+    window.open('https://buymeacoffee.com/verba', '_blank');
   };
 
   return (
