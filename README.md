@@ -11,7 +11,7 @@ Verba is an open-source, AI-powered meeting assistant for transcribing, summariz
 - **Summarization**: Generates concise summaries with Hugging Face Transformers.
 - **Noise Reduction**: Cleans audio with RNNoise.
 - **Note Storage**: Saves transcripts and summaries locally.
-- **Simple UI**: Built with React, Vite, TypeScript, shadcn-ui, and Tailwind CSS.
+- **Simple UI**: Built with Vite, TypeScript, shadcn-ui, and Tailwind CSS.
 
 ## Installation
 
@@ -37,7 +37,7 @@ Verba is an open-source, AI-powered meeting assistant for transcribing, summariz
 
 ## Project Status
 
-- **UI**: 99% complete (React-based shell with dark mode, mode toggle).
+- **UI**: 99% complete (Tauri-based shell with dark mode, mode toggle).
 - **Backend**: In progress (Whisper Tiny, RNNoise, summarization).
 - **Timeline**: Aug 20–Sept 23, 2025 (see [docs/timeline.md](docs/timeline.md)).
 
