@@ -1,0 +1,1395 @@
+/*
+============================================
+COMPLETE STANDALONE FRONTEND - STUDY SPOT UI
+============================================
+
+This is a complete, self-contained React frontend application.
+All components, hooks, utilities, and UI elements are included in this single file.
+
+To use this elsewhere:
+1. Install dependencies: React, Lucide React, Class Variance Authority
+2. Add the CSS styles (see bottom of file)
+3. Import and use the StudySpotApp component
+
+Dependencies needed:
+- react
+- lucide-react
+- class-variance-authority
+- clsx or tailwind-merge (for className merging)
+
+*/
+
+import React, { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
+import { 
+  Mic, 
+  MicOff, 
+  Play, 
+  Pause, 
+  Upload, 
+  FileText, 
+  Bookmark, 
+  GraduationCap, 
+  Coffee, 
+  MessageCircle, 
+  Send, 
+  Bot, 
+  User, 
+  ArrowLeft, 
+  Settings, 
+  Upload as UploadIcon,
+  Trash2,
+  Edit3,
+  Save,
+  X,
+  Plus,
+  Download,
+  Volume2,
+  Calendar,
+  Clock,
+  Wifi,
+  WifiOff,
+  Brain,
+  Sparkles,
+  Cloud,
+  CloudUpload,
+  Check,
+  Image as ImageIcon,
+  Camera,
+  Home,
+  Users,
+  BarChart3,
+  Bell,
+  Search,
+  Filter,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronRight,
+  Lightbulb,
+  Target,
+  Zap
+} from 'lucide-react';
+import { cva, type VariantProps } from 'class-variance-authority';
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function cn(...inputs: (string | undefined | null | boolean)[]): string {
+  return inputs.filter(Boolean).join(' ');
+}
+
+// ============================================
+// UI COMPONENTS
+// ============================================
+
+// Button Component
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, ...props }, ref) => {
+    return (
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+// Card Components
+const Card = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+      {...props}
+    />
+  )
+);
+
+const CardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("flex flex-col space-y-1.5 p-6", className)}
+      {...props}
+    />
+  )
+);
+
+const CardTitle = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => (
+    <h3
+      ref={ref}
+      className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
+      {...props}
+    />
+  )
+);
+
+const CardDescription = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <p
+      ref={ref}
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+);
+
+const CardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  )
+);
+
+// Input Component
+const Input = forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+// Dialog Components
+const Dialog = ({ children, open, onOpenChange }: { children: React.ReactNode; open: boolean; onOpenChange: (open: boolean) => void }) => {
+  if (!open) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div 
+        className="fixed inset-0 bg-black/80" 
+        onClick={() => onOpenChange(false)}
+      />
+      <div className="relative bg-background rounded-lg shadow-lg max-w-lg w-full mx-4 max-h-[85vh] overflow-auto">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const DialogContent = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("p-6", className)}>
+    {children}
+  </div>
+);
+
+const DialogHeader = ({ children }: { children: React.ReactNode }) => (
+  <div className="mb-4">
+    {children}
+  </div>
+);
+
+const DialogTitle = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-lg font-semibold">
+    {children}
+  </h2>
+);
+
+// Badge Component
+const Badge = ({ children, variant = "default", className }: { 
+  children: React.ReactNode; 
+  variant?: "default" | "secondary" | "destructive" | "outline";
+  className?: string;
+}) => {
+  const variants = {
+    default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+    secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+    outline: "text-foreground",
+  };
+
+  return (
+    <div className={cn(
+      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      variants[variant],
+      className
+    )}>
+      {children}
+    </div>
+  );
+};
+
+// ============================================
+// CUSTOM HOOKS
+// ============================================
+
+const useToast = () => {
+  const [toasts, setToasts] = useState<Array<{ id: string; title?: string; description?: string; variant?: string }>>([]);
+
+  const toast = ({ title, description, variant = "default" }: { title?: string; description?: string; variant?: string }) => {
+    const id = Math.random().toString(36).substring(7);
+    setToasts(prev => [...prev, { id, title, description, variant }]);
+    
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 5000);
+  };
+
+  return { toast, toasts };
+};
+
+// ============================================
+// MAIN COMPONENTS
+// ============================================
+
+// Splash Screen Component
+const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFinish();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [onFinish]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-primary/80 flex items-center justify-center">
+      <div className="text-center space-y-8">
+        <div className="bounce-logo">
+          <GraduationCap className="h-20 w-20 text-white mx-auto" />
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold text-white">Study Spot</h1>
+          <p className="text-xl text-white/80">Your AI-powered learning companion</p>
+        </div>
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Card Component
+const DashboardCard = ({ 
+  icon: Icon, 
+  title, 
+  description, 
+  onClick, 
+  disabled = false,
+  badge
+}: { 
+  icon: any; 
+  title: string; 
+  description: string; 
+  onClick: () => void; 
+  disabled?: boolean;
+  badge?: string;
+}) => (
+  <Card 
+    className={cn(
+      "cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg",
+      disabled && "opacity-50 cursor-not-allowed"
+    )}
+    onClick={disabled ? undefined : onClick}
+  >
+    <CardHeader className="text-center space-y-4">
+      <div className="mx-auto p-3 bg-primary/10 rounded-full w-fit relative">
+        <Icon className="h-8 w-8 text-primary" />
+        {badge && (
+          <Badge className="absolute -top-2 -right-2 px-2 py-1 text-xs">
+            {badge}
+          </Badge>
+        )}
+      </div>
+      <div>
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardDescription className="mt-2">{description}</CardDescription>
+      </div>
+    </CardHeader>
+  </Card>
+);
+
+// Profile Modal Component
+const ProfileModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+  const [name, setName] = useState(() => localStorage.getItem('userProfile_name') || '');
+  const [avatar, setAvatar] = useState(() => localStorage.getItem('userProfile_avatar') || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    localStorage.setItem('userProfile_name', name);
+    localStorage.setItem('userProfile_avatar', avatar);
+    toast({ title: "Profile saved successfully!" });
+    onOpenChange(false);
+  };
+
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatar(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Profile Settings</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="h-12 w-12 text-muted-foreground" />
+                )}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleSave} className="flex-1">
+              <Save className="h-4 w-4" />
+              Save Profile
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Profile Button Component
+const ProfileButton = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [name] = useState(() => localStorage.getItem('userProfile_name') || '');
+  const [avatar] = useState(() => localStorage.getItem('userProfile_avatar') || '');
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        className="flex items-center gap-2 p-2"
+        onClick={() => setShowModal(true)}
+      >
+        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+          {avatar ? (
+            <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <User className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+        <span className="text-sm font-medium">{name || 'Guest'}</span>
+      </Button>
+      
+      <ProfileModal open={showModal} onOpenChange={setShowModal} />
+    </>
+  );
+};
+
+// Donate Button Component
+const DonateButton = () => {
+  const handleDonate = () => {
+    window.open('https://buymeacoffee.com/studyspot', '_blank');
+  };
+
+  return (
+    <div className="fixed bottom-4 right-4 z-40">
+      <Button
+        onClick={handleDonate}
+        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg rounded-full p-3"
+        size="icon"
+      >
+        <Coffee className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+};
+
+// Cloud Sync Component
+const SyncToCloudSection = () => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
+
+  const handleUpload = async () => {
+    setIsUploading(true);
+    // Simulate upload
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsUploading(false);
+    toast({ title: "Data uploaded to cloud successfully!" });
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    // Simulate download
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsDownloading(false);
+    toast({ title: "Data downloaded from cloud successfully!" });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Cloud className="h-5 w-5" />
+          Cloud Sync
+        </CardTitle>
+        <CardDescription>
+          Keep your data synchronized across all devices
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleUpload}
+              disabled={isUploading}
+              className="flex-1"
+              variant="outline"
+            >
+              {isUploading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+              ) : (
+                <CloudUpload className="h-4 w-4" />
+              )}
+              {isUploading ? "Uploading..." : "Upload to Cloud"}
+            </Button>
+            
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="flex-1"
+              variant="outline"
+            >
+              {isDownloading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {isDownloading ? "Downloading..." : "Download from Cloud"}
+            </Button>
+          </div>
+          
+          <div className="text-xs text-muted-foreground">
+            Last sync: Never
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Previously Imported Files Component
+const PreviouslyImportedFiles = () => {
+  const [files, setFiles] = useState([
+    { id: '1', name: 'Meeting Recording 1.mp3', size: '2.5 MB', date: '2024-01-15' },
+    { id: '2', name: 'Lecture Notes Audio.wav', size: '5.2 MB', date: '2024-01-14' },
+    { id: '3', name: 'Interview Session.m4a', size: '3.8 MB', date: '2024-01-13' }
+  ]);
+
+  const handleDelete = (id: string) => {
+    setFiles(files.filter(file => file.id !== id));
+  };
+
+  const handlePlay = (file: any) => {
+    console.log('Playing file:', file.name);
+  };
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-lg font-medium mb-4">Previously Imported Files</h3>
+      <div className="space-y-2">
+        {files.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-2" />
+            <p>No files imported yet</p>
+          </div>
+        ) : (
+          files.map((file) => (
+            <div key={file.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <Volume2 className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">{file.size} • {file.date}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => handlePlay(file)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => handleDelete(file.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Import Audio Component
+const ImportAudio = ({ onBack, isOnline }: { onBack: () => void; isOnline: boolean }) => {
+  const [dragActive, setDragActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  const handleFiles = async (files: FileList) => {
+    const file = files[0];
+    if (!file.type.startsWith('audio/')) {
+      toast({ title: "Please select an audio file", variant: "destructive" });
+      return;
+    }
+
+    setIsUploading(true);
+    // Simulate upload
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    setIsUploading(false);
+    toast({ title: "Audio file imported successfully!" });
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Import Audio</h1>
+            <p className="text-muted-foreground">Upload audio files for transcription</p>
+          </div>
+        </div>
+
+        {!isOnline && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <WifiOff className="h-4 w-4" />
+              <span className="text-sm">You're offline. Files will be processed when connection is restored.</span>
+            </div>
+          </div>
+        )}
+
+        <Card>
+          <CardContent className="p-6">
+            <div
+              className={cn(
+                "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+                dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
+                isUploading && "pointer-events-none opacity-50"
+              )}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              {isUploading ? (
+                <div className="space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto" />
+                  <p className="text-lg font-medium">Processing audio file...</p>
+                  <p className="text-muted-foreground">This may take a few moments</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <UploadIcon className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <div>
+                    <p className="text-lg font-medium">Drop your audio file here</p>
+                    <p className="text-muted-foreground">or click to browse</p>
+                  </div>
+                  <Button onClick={() => fileInputRef.current?.click()}>
+                    Choose File
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Supports MP3, WAV, M4A, and other audio formats
+                  </p>
+                </div>
+              )}
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleChange}
+                className="hidden"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <SyncToCloudSection />
+        <PreviouslyImportedFiles />
+      </div>
+    </div>
+  );
+};
+
+// Live Meeting Component
+const LiveMeeting = ({ onBack, isOnline }: { onBack: () => void; isOnline: boolean }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [transcript, setTranscript] = useState('');
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording && !isPaused) {
+      interval = setInterval(() => {
+        setDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording, isPaused]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setIsPaused(false);
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    setIsPaused(false);
+    setDuration(0);
+  };
+
+  const handlePauseRecording = () => {
+    setIsPaused(!isPaused);
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Live Meeting</h1>
+            <p className="text-muted-foreground">Real-time transcription</p>
+          </div>
+        </div>
+
+        {!isOnline && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <WifiOff className="h-4 w-4" />
+              <span className="text-sm">You're offline. Recording will be saved locally.</span>
+            </div>
+          </div>
+        )}
+
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="text-center space-y-6">
+              <div className="space-y-2">
+                <div className="text-3xl font-mono font-bold">
+                  {formatTime(duration)}
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  {isRecording && (
+                    <>
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-muted-foreground">
+                        {isPaused ? 'Paused' : 'Recording'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-4">
+                {!isRecording ? (
+                  <Button size="lg" onClick={handleStartRecording} className="rounded-full">
+                    <Mic className="h-5 w-5" />
+                    Start Recording
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      onClick={handlePauseRecording}
+                      className="rounded-full"
+                    >
+                      {isPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+                      {isPaused ? 'Resume' : 'Pause'}
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      variant="destructive" 
+                      onClick={handleStopRecording}
+                      className="rounded-full"
+                    >
+                      <MicOff className="h-5 w-5" />
+                      Stop
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Live Transcript
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="min-h-[200px] p-4 bg-muted rounded-lg">
+              {transcript || (
+                <p className="text-muted-foreground text-center">
+                  Transcript will appear here when recording starts...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// Saved Transcripts Component
+const SavedTranscripts = ({ onBack }: { onBack: () => void }) => {
+  const [transcripts] = useState([
+    {
+      id: '1',
+      title: 'Team Meeting - Project Updates',
+      date: '2024-01-15',
+      duration: '45 min',
+      content: 'We discussed the current project status and upcoming milestones...'
+    },
+    {
+      id: '2',
+      title: 'Client Call - Requirements Review',
+      date: '2024-01-14',
+      duration: '30 min',
+      content: 'The client outlined their specific requirements for the new feature...'
+    }
+  ]);
+
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Saved Transcripts</h1>
+            <p className="text-muted-foreground">Your transcript history</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {transcripts.map((transcript) => (
+            <Card key={transcript.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{transcript.title}</CardTitle>
+                    <CardDescription>
+                      {transcript.date} • {transcript.duration}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost">
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground line-clamp-3">
+                  {transcript.content}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Reminders Notes Component
+const RemindersNotes = ({ onBack }: { onBack: () => void }) => {
+  const [notes, setNotes] = useState([
+    { id: '1', title: 'Review meeting notes', completed: false },
+    { id: '2', title: 'Prepare presentation', completed: true },
+  ]);
+  const [newNote, setNewNote] = useState('');
+
+  const addNote = () => {
+    if (newNote.trim()) {
+      setNotes([...notes, { id: Date.now().toString(), title: newNote, completed: false }]);
+      setNewNote('');
+    }
+  };
+
+  const toggleNote = (id: string) => {
+    setNotes(notes.map(note => 
+      note.id === id ? { ...note, completed: !note.completed } : note
+    ));
+  };
+
+  const deleteNote = (id: string) => {
+    setNotes(notes.filter(note => note.id !== id));
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Reminders & Notes</h1>
+            <p className="text-muted-foreground">Keep track of important tasks</p>
+          </div>
+        </div>
+
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex gap-2">
+              <Input
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Add a new note or reminder..."
+                onKeyPress={(e) => e.key === 'Enter' && addNote()}
+              />
+              <Button onClick={addNote}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-2">
+          {notes.map((note) => (
+            <Card key={note.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => toggleNote(note.id)}
+                    className="p-0 h-auto"
+                  >
+                    {note.completed ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <div className="h-4 w-4 border rounded" />
+                    )}
+                  </Button>
+                  <span className={cn(
+                    "flex-1",
+                    note.completed && "line-through text-muted-foreground"
+                  )}>
+                    {note.title}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteNote(note.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// AI Chat Component
+const FloatingAIChat = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
+    { role: 'assistant', content: 'Hello! I\'m your AI study companion. How can I help you today?' }
+  ]);
+  const [input, setInput] = useState('');
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+
+    const newMessages = [...messages, { role: 'user' as const, content: input }];
+    setMessages(newMessages);
+    setInput('');
+
+    // Simulate AI response
+    setTimeout(() => {
+      setMessages([...newMessages, { 
+        role: 'assistant' as const, 
+        content: 'I understand you need help with that. Let me provide some guidance based on your study materials.' 
+      }]);
+    }, 1000);
+  };
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      {isOpen && (
+        <Card className="w-80 h-96 mb-4 flex flex-col">
+          <CardHeader className="flex-row items-center justify-between p-4">
+            <CardTitle className="text-lg">AI Study Assistant</CardTitle>
+            <Button size="sm" variant="ghost" onClick={() => setIsOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="flex-1 p-4 pt-0 flex flex-col">
+            <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+              {messages.map((message, index) => (
+                <div key={index} className={cn(
+                  "flex gap-2",
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                )}>
+                  <div className={cn(
+                    "max-w-[80%] p-3 rounded-lg text-sm",
+                    message.role === 'user' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  )}>
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask me anything..."
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              />
+              <Button size="sm" onClick={sendMessage}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg rounded-full p-3"
+        size="icon"
+      >
+        <MessageCircle className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+};
+
+// Study Spot Component
+const StudySpot = ({ onBack }: { onBack: () => void }) => {
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Brain className="h-6 w-6" />
+              Study Spot
+            </h1>
+            <p className="text-muted-foreground">Your personalized learning environment</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Study Goals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Complete Chapter 5</span>
+                  <Badge variant="outline">In Progress</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Review Notes</span>
+                  <Badge>Completed</Badge>
+                </div>
+                <Button size="sm" variant="outline" className="w-full">
+                  <Plus className="h-4 w-4" />
+                  Add Goal
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" />
+                Quick Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Input placeholder="Quick note..." className="text-sm" />
+                <Button size="sm" className="w-full">Save Note</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Study Streak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">7</div>
+                <div className="text-sm text-muted-foreground">Days in a row</div>
+                <Button size="sm" variant="outline" className="mt-2">
+                  View History
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Dashboard Component
+const Dashboard = ({ onNavigate, isOnline }: { onNavigate: (page: string) => void; isOnline: boolean }) => {
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-8 w-8 text-primary" />
+              <h1 className="text-2xl font-bold">Study Spot</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <Wifi className="h-4 w-4 text-green-600" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-600" />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+              <ProfileButton />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold mb-2">Welcome back!</h2>
+          <p className="text-muted-foreground">What would you like to work on today?</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <DashboardCard
+            icon={Mic}
+            title="Live Meeting"
+            description="Record and transcribe meetings in real-time"
+            onClick={() => onNavigate('live-meeting')}
+            disabled={!isOnline}
+            badge={!isOnline ? "Offline" : undefined}
+          />
+          
+          <DashboardCard
+            icon={Upload}
+            title="Import Audio"
+            description="Upload audio files for transcription"
+            onClick={() => onNavigate('import-audio')}
+          />
+          
+          <DashboardCard
+            icon={FileText}
+            title="Saved Transcripts"
+            description="View and manage your transcription history"
+            onClick={() => onNavigate('transcripts')}
+          />
+          
+          <DashboardCard
+            icon={Bookmark}
+            title="Reminders & Notes"
+            description="Keep track of important tasks and ideas"
+            onClick={() => onNavigate('reminders')}
+          />
+          
+          <DashboardCard
+            icon={Brain}
+            title="Study Spot"
+            description="AI-powered personalized learning environment"
+            onClick={() => onNavigate('studyspot')}
+          />
+          
+          <DashboardCard
+            icon={Settings}
+            title="Settings"
+            description="Customize your Study Spot experience"
+            onClick={() => console.log('Settings clicked')}
+          />
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// Main App Component
+const StudySpotApp = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
+    };
+  }, []);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+  };
+
+  const handleBack = () => {
+    setCurrentPage('dashboard');
+  };
+
+  if (showSplash) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
+
+  return (
+    <>
+      {/* Conditionally show FloatingAIChat only in StudySpot, DonateButton everywhere else */}
+      {currentPage === 'studyspot' ? <FloatingAIChat /> : <DonateButton />}
+
+      {(() => {
+        switch (currentPage) {
+          case 'live-meeting':
+            return <LiveMeeting onBack={handleBack} isOnline={isOnline} />;
+          case 'import-audio':
+            return <ImportAudio onBack={handleBack} isOnline={isOnline} />;
+          case 'transcripts':
+            return <SavedTranscripts onBack={handleBack} />;
+          case 'reminders':
+            return <RemindersNotes onBack={handleBack} />;
+          case 'studyspot':
+            return <StudySpot onBack={handleBack} />;
+          default:
+            return <Dashboard onNavigate={handleNavigate} isOnline={isOnline} />;
+        }
+      })()}
+    </>
+  );
+};
+
+export default StudySpotApp;
+
+/*
+============================================
+CSS STYLES TO ADD
+============================================
+
+Add these styles to your CSS file:
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 217 91% 60%;
+}
+
+.bounce-logo {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+*/
