@@ -402,14 +402,6 @@ Verba stands on the shoulders of giants:
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first styling
 - **Our amazing community** - Bug reports, feature requests, and contributions
 
-## 🌟 **Star History**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=marc-254/Verba.devops&type=Date)](https://star-history.com/#marc-254/Verba.devops&Date)
-
----
-
-<div align="center">
-
 **Made with ❤️ by [Mark Munene](https://github.com/marc-254) and the Verba community**
 
 *Democratizing AI transcription technology, one meeting at a time*
