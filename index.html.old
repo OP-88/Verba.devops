@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ Verba - AI-Powered Meeting Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy-primary: #0A1F44;
+            --navy-secondary: #1E3A8A;
+            --navy-accent: #3B82F6;
+            --navy-light: #EFF6FF;
+            --success-green: #10B981;
+            --error-red: #EF4444;
+            --warning-yellow: #F59E0B;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--navy-primary) 0%, var(--navy-secondary) 100%);
+            color: white;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #60A5FA, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error-red);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success-green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card h2 {
+            color: var(--navy-accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .template-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .template-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--navy-accent);
+            transform: translateY(-2px);
+        }
+
+        .template-card.selected {
+            border-color: var(--navy-accent);
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .template-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .template-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .template-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--navy-accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--navy-accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563EB;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--navy-accent), #60A5FA);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .transcript-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            color: #FCA5A5;
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            color: #6EE7B7;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .status-indicator {
+                position: static;
+                justify-content: center;
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <h1>🎙️ Verba Enhanced</h1>
+            <p>AI-Powered Meeting Transcription & Analysis</p>
+        </div>
+
+        <!-- Meeting Templates -->
+        <div class="card">
+            <h2>📋 Meeting Templates</h2>
+            <div class="templates-grid">
+                <div class="template-card" data-template="standup">
+                    <div class="template-icon">👥</div>
+                    <div class="template-title">Standup</div>
+                    <div class="template-description">Progress updates, blockers, action items</div>
+                </div>
+                <div class="template-card" data-template="client">
+                    <div class="template-icon">🤝</div>
+                    <div class="template-title">Client Meeting</div>
+                    <div class="template-description">Requirements, decisions, timelines</div>
+                </div>
+                <div class="template-card" data-template="lecture">
+                    <div class="template-icon">🎓</div>
+                    <div class="template-title">Lecture</div>
+                    <div class="template-description">Key concepts, examples, assignments</div>
+                </div>
+                <div class="template-card" data-template="interview">
+                    <div class="template-icon">🎤</div>
+                    <div class="template-title">Interview</div>
+                    <div class="template-description">Questions, responses, evaluation</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Input -->
+        <div class="card">
+            <h2>🔊 Audio Input</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & drop audio file here</h3>
+                <p>Supports: MP3, WAV, FLAC, M4A, OGG</p>
+                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="recordBtn">
+                    🎤 Start Recording
+                </button>
+                <button class="btn btn-secondary" id="processBtn" disabled>
+                    ⚙️ Process Audio
+                </button>
+            </div>
+
+            <div class="progress-bar hidden" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Processing Status -->
+        <div class="card">
+            <h2>📊 Processing Status</h2>
+            <div id="statusMessage">Ready to process audio</div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="card">
+            <h2>📝 Transcript</h2>
+            <div class="transcript-area" id="transcriptArea">
+                Your transcript will appear here...
+            </div>
+            
+            <div class="export-buttons">
+                <button class="export-btn" onclick="exportTranscript('txt')">📄 Export TXT</button>
+                <button class="export-btn" onclick="exportTranscript('pdf')">📋 Export PDF</button>
+                <button class="export-btn" onclick="exportTranscript('json')">🔧 Export JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - FIXED BACKEND URL
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // State management
+        let currentAudioFile = null;
+        let selectedTemplate = 'standup';
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // DOM elements
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const recordBtn = document.getElementById('recordBtn');
+        const processBtn = document.getElementById('processBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const transcriptArea = document.getElementById('transcriptArea');
+        const templateCards = document.querySelectorAll('.template-card');
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Verba Enhanced loading...');
+            checkBackendConnection();
+            initializeEventListeners();
+            selectTemplate('standup'); // Default template
+        });
+
+        // Backend connection check
+        async function checkBackendConnection() {
+            try {
+                console.log(`🔍 Checking backend at: ${API_BASE_URL}`);
+                const response = await fetch(`${API_BASE_URL}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend connected:', data);
+                    updateConnectionStatus(true);
+                    statusMessage.textContent = 'Backend connected - Ready to process audio';
+                    statusMessage.className = 'success-message';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                updateConnectionStatus(false);
+                statusMessage.innerHTML = `
+                    <strong>Processing Failed: HTTP Error! status: 422</strong><br><br>
+                    This might be because:<br>
+                    • Backend is not running (check <a href="${API_BASE_URL}" target="_blank">${API_BASE_URL}</a>)<br>
+                    • Audio file format not supported<br>
+                    • Network connection issue<br><br>
+                    Try starting the backend with:<br>
+                    <code>python verba_database_integration.py server</code>
+                `;
+                statusMessage.className = 'error-message';
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Backend Connected';
+                processBtn.disabled = false;
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = 'Backend Disconnected';
+                processBtn.disabled = true;
+            }
+        }
+
+        // Event listeners
+        function initializeEventListeners() {
+            // Template selection
+            templateCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const template = card.dataset.template;
+                    selectTemplate(template);
+                });
+            });
+
+            // File upload
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleFileDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Recording controls
+            recordBtn.addEventListener('click', toggleRecording);
+            processBtn.addEventListener('click', processAudio);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyShortcuts);
+        }
+
+        function selectTemplate(templateName) {
+            selectedTemplate = templateName;
+            templateCards.forEach(card => {
+                card.classList.remove('selected');
+                if (card.dataset.template === templateName) {
+                    card.classList.add('selected');
+                }
+            });
+            console.log(`📋 Selected template: ${templateName}`);
+        }
+
+        // File handling
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            const validTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/m4a', 'audio/ogg'];
+            
+            if (!validTypes.some(type => file.type.startsWith('audio/'))) {
+                alert('Please select a valid audio file (MP3, WAV, FLAC, M4A, OGG)');
+                return;
+            }
+
+            currentAudioFile = file;
+            uploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <h3>${file.name}</h3>
+                <p>File size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p>Ready to process</p>
+            `;
+            processBtn.disabled = false;
+            console.log('📁 File loaded:', file.name);
+        }
+
+        // Recording functionality
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
+                    handleFile(audioFile);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.innerHTML = '⏹️ Stop Recording';
+                recordBtn.classList.remove('btn-primary');
+                recordBtn.classList.add('btn-secondary');
+                statusMessage.textContent = 'Recording in progress...';
+
+            } catch (error) {
+                console.error('Recording error:', error);
+                alert('Could not access microphone. Please check permissions.');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                recordBtn.innerHTML = '🎤 Start Recording';
+                recordBtn.classList.remove('btn-secondary');
+                recordBtn.classList.add('btn-primary');
+                statusMessage.textContent = 'Recording stopped - Ready to process';
+            }
+        }
+
+        // Audio processing
+        async function processAudio() {
+            if (!currentAudioFile) {
+                alert('Please select or record an audio file first');
+                return;
+            }
+
+            try {
+                showProgress(true);
+                updateProgress(0);
+                statusMessage.textContent = 'Processing audio... Please wait';
+                processBtn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('audio_file', currentAudioFile);
+                formData.append('template', selectedTemplate);
+                formData.append('language', 'auto'); // Auto-detect language
+
+                updateProgress(25);
+
+                console.log('🔄 Sending request to backend...');
+                const response = await fetch(`${API_BASE_URL}/transcribe`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                updateProgress(75);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                updateProgress(100);
+
+                console.log('✅ Processing complete:', result);
+                displayTranscript(result);
+                statusMessage.textContent = 'Processing complete!';
+                statusMessage.className = 'success-message';
+
+            } catch (error) {
+                console.error('❌ Processing error:', error);
+                statusMessage.innerHTML = `
+                    <strong>Processing Failed: ${error.message}</strong><br><br>
+                    Please check:<br>
+                    • Backend is running on <a href="${API_BASE_URL}" target="_blank">${API_BASE_URL}</a><br>
+                    • Audio file is valid<br>
+                    • Network connection is stable
+                `;
+                statusMessage.className = 'error-message';
+            } finally {
+                showProgress(false);
+                processBtn.disabled = false;
+            }
+        }
+
+        function showProgress(show) {
+            if (show) {
+                progressBar.classList.remove('hidden');
+            } else {
+                progressBar.classList.add('hidden');
+            }
+        }
+
+        function updateProgress(percent) {
+            progressFill.style.width = `${percent}%`;
+        }
+
+        function displayTranscript(result) {
+            let transcriptText = '';
+            
+            if (result.transcript) {
+                transcriptText = result.transcript;
+            } else if (result.segments) {
+                transcriptText = result.segments.map(segment => 
+                    `[${formatTime(segment.start)} - ${formatTime(segment.end)}] ${segment.text}`
+                ).join('\n');
+            } else if (result.text) {
+                transcriptText = result.text;
+            } else {
+                transcriptText = JSON.stringify(result, null, 2);
+            }
+
+            transcriptArea.textContent = transcriptText;
+            
+            // Store transcript for export
+            window.currentTranscript = result;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Export functionality
+        function exportTranscript(format) {
+            if (!window.currentTranscript) {
+                alert('No transcript available to export');
+                return;
+            }
+
+            const transcript = transcriptArea.textContent;
+            const filename = `verba-transcript-${Date.now()}`;
+
+            switch (format) {
+                case 'txt':
+                    downloadFile(transcript, `${filename}.txt`, 'text/plain');
+                    break;
+                case 'pdf':
+                    // Simple PDF export (could be enhanced with a PDF library)
+                    alert('PDF export coming soon! Use TXT export for now.');
+                    break;
+                case 'json':
+                    const jsonData = JSON.stringify(window.currentTranscript, null, 2);
+                    downloadFile(jsonData, `${filename}.json`, 'application/json');
+                    break;
+            }
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Keyboard shortcuts
+        function handleKeyShortcuts(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 't':
+                    case 'T':
+                        e.preventDefault();
+                        toggleRecording();
+                        break;
+                    case 'p':
+                    case 'P':
+                        e.preventDefault();
+                        if (!processBtn.disabled) {
+                            processAudio();
+                        }
+                        break;
+                }
+            }
+        }
+
+        // Periodic connection check
+        setInterval(checkBackendConnection, 30000); // Check every 30 seconds
+    </script>
+</body>
+</html>
