@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" href="data:,">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VERBA</title>
+<meta name="description" content="Verba - Offline AI Meeting Assistant" />
+<meta name="author" content="Mark Munene" />
+
+<meta property="og:title" content="Verba - Offline AI Meeting Assistant" />
+<meta property="og:description" content="Your privacy-first AI transcription app" />
+<meta property="og:type" content="website" />
+
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ Verba - AI Meeting Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: slideInDown 0.6s ease-out;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
+        .main-panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background-color: #10b981;
+        }
+
+        .status-dot.disconnected {
+            background-color: #ef4444;
+        }
+
+        .templates-section {
+            margin-bottom: 2rem;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .template-card {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .template-card:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .template-card.active {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
+
+        .template-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-section {
+            margin-bottom: 2rem;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .controls-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .progress-section {
+            margin-bottom: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .progress-section.visible {
+            opacity: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        .transcript-section {
+            margin-bottom: 2rem;
+        }
+
+        .transcript-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .export-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #3b82f6;
+        }
+
+        .speaker-info {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 0.5rem;
+        }
+
+        .speaker-tag {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: calc(200px + 100%) 0;
+            }
+        }
+
+        .recording {
+            animation: recordingPulse 1s infinite;
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .connection-status {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .connection-status.connected {
+            color: #10b981;
+        }
+
+        .connection-status.disconnected {
+            color: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .templates-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .controls-section {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎙️ Verba AI</div>
+            <div class="subtitle">Professional Meeting Transcription & Analysis</div>
+        </div>
+
+        <div class="main-panel">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot disconnected" id="connectionDot"></div>
+                    <span class="connection-status disconnected" id="connectionStatus">Checking Backend...</span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.875rem;">
+                    <span id="backendUrl">Backend: http://localhost:8000</span>
+                </div>
+            </div>
+
+            <!-- Meeting Templates -->
+            <div class="templates-section">
+                <h3 class="section-title">📋 Meeting Templates</h3>
+                <div class="templates-grid">
+                    <div class="template-card" data-template="standup">
+                        <div class="template-icon">👥</div>
+                        <div><strong>Standup</strong></div>
+                        <div style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">
+                            Progress updates, blockers, action items
+                        </div>
+                    </div>
+                    <div class="template-card" data-template="client">
+                        <div class="template-icon">🤝</div>
+                        <div><strong>Client Meeting</strong></div>
+                        <div style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">
+                            Requirements, decisions, timelines
+                        </div>
+                    </div>
+                    <div class="template-card" data-template="lecture">
+                        <div class="template-icon">🎓</div>
+                        <div><strong>Lecture</strong></div>
+                        <div style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">
+                            Key concepts, examples, assignments
+                        </div>
+                    </div>
+                    <div class="template-card" data-template="interview">
+                        <div class="template-icon">🎤</div>
+                        <div><strong>Interview</strong></div>
+                        <div style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">
+                            Questions, responses, evaluation
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="upload-section">
+                <h3 class="section-title">📁 Audio Input</h3>
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                    <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">
+                        <strong>Drag & drop audio file here</strong>
+                    </div>
+                    <div style="color: #94a3b8;">
+                        Supports: MP3, WAV, FLAC, M4A, OGG
+                    </div>
+                    <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Recording Controls -->
+            <div class="controls-section">
+                <button class="btn btn-primary" id="recordBtn">
+                    🎤 Start Recording
+                </button>
+                <button class="btn btn-danger hidden" id="stopBtn">
+                    ⏹️ Stop Recording
+                </button>
+                <button class="btn btn-secondary" id="processBtn" disabled>
+                    🤖 Process Audio
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection">
+                <h3 class="section-title">📊 Processing Status</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div style="text-align: center; color: #94a3b8;">
+                    <span id="progressText">Ready to process...</span>
+                </div>
+                <div class="speaker-info" id="speakerInfo" style="display: none;">
+                    <span>👥 Speakers detected:</span>
+                    <div id="speakerTags"></div>
+                </div>
+            </div>
+
+            <!-- Transcript Section -->
+            <div class="transcript-section">
+                <h3 class="section-title">📝 Transcript</h3>
+                <div class="transcript-box" id="transcriptBox">
+                    Your transcription will appear here...
+                    
+                    Click "Start Recording" to begin or drag & drop an audio file above.
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="export-section">
+                <button class="btn btn-secondary" id="exportTxt" disabled>
+                    📄 Export TXT
+                </button>
+                <button class="btn btn-secondary" id="exportPdf" disabled>
+                    📑 Export PDF
+                </button>
+                <button class="btn btn-secondary" id="exportJson" disabled>
+                    🔧 Export JSON
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let currentTemplate = 'general';
+        let isRecording = false;
+        let verbalAPI = null;
+        let currentTranscript = '';
+
+        // API Connection Class
+        class VerbalAPI {
+            constructor() {
+                this.backendURL = 'http://localhost:8000';
+            }
+
+            async testConnection() {
+                try {
+                    const response = await fetch(`${this.backendURL}/`);
+                    console.log('✅ Backend connection successful!');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Backend connection failed:', error);
+                    return false;
+                }
+            }
+
+            async transcribeAudio(audioBlob, options = {}) {
+                try {
+                    console.log('📤 Sending audio to backend...');
+                    
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob);
+                    formData.append('language', options.language || 'en');
+                    formData.append('template', options.template || 'general');
+
+                    const response = await fetch(`${this.backendURL}/transcribe`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('✅ Transcription received:', result);
+                    return result;
+                } catch (error) {
+                    console.error('❌ Transcription failed:', error);
+                    throw error;
+                }
+            }
+
+            async exportTranscript(transcript, format = 'txt') {
+                try {
+                    console.log(`📥 Exporting as ${format}...`);
+                    
+                    const response = await fetch(`${this.backendURL}/export`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            transcript: transcript,
+                            format: format
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const blob = await response.blob();
+                    console.log('✅ Export ready for download');
+                    return blob;
+                } catch (error) {
+                    console.error('❌ Export failed:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Verba AI Loading...');
+            
+            // Initialize API
+            verbalAPI = new VerbalAPI();
+            
+            // Test backend connection
+            await testBackendConnection();
+            
+            // Setup all event listeners
+            setupEventListeners();
+            
+            console.log('✅ Verba AI Ready!');
+        });
+
+        // Test backend connection
+        async function testBackendConnection() {
+            const connectionDot = document.getElementById('connectionDot');
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            try {
+                connectionStatus.textContent = 'Testing connection...';
+                const isConnected = await verbalAPI.testConnection();
+                
+                if (isConnected) {
+                    connectionDot.className = 'status-dot connected';
+                    connectionStatus.textContent = 'Backend Connected';
+                    connectionStatus.className = 'connection-status connected';
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                connectionDot.className = 'status-dot disconnected';
+                connectionStatus.textContent = 'Backend Disconnected';
+                connectionStatus.className = 'connection-status disconnected';
+                console.error('Backend connection failed:', error);
+            }
+        }
+
+        // Setup all event listeners
+        function setupEventListeners() {
+            // Template selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentTemplate = this.dataset.template;
+                    console.log(`📋 Template selected: ${currentTemplate}`);
+                });
+            });
+
+            // File upload
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileUpload(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFileUpload(this.files[0]);
+                }
+            });
+
+            // Recording controls
+            document.getElementById('recordBtn').addEventListener('click', startRecording);
+            document.getElementById('stopBtn').addEventListener('click', stopRecording);
+            document.getElementById('processBtn').addEventListener('click', processCurrentAudio);
+
+            // Export buttons
+            document.getElementById('exportTxt').addEventListener('click', () => exportTranscript('txt'));
+            document.getElementById('exportPdf').addEventListener('click', () => exportTranscript('pdf'));
+            document.getElementById('exportJson').addEventListener('click', () => exportTranscript('json'));
+        }
+
+        // Handle file upload
+        function handleFileUpload(file) {
+            console.log('📁 File uploaded:', file.name);
+            
+            // Check file type
+            const validTypes = ['audio/mp3', 'audio/wav', 'audio/flac', 'audio/m4a', 'audio/ogg', 'audio/mpeg'];
+            if (!validTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                alert('Please upload a valid audio file (MP3, WAV, FLAC, M4A, OGG)');
+                return;
+            }
+
+            // Show progress and process
+            showProgress();
+            updateProgress(10, 'File uploaded, preparing...');
+            
+            // Convert file to blob and process
+            processAudioFile(file);
+        }
+
+        // Start recording
+        async function startRecording() {
+            try {
+                console.log('🎤 Starting recording...');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    processAudioBlob(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // Update UI
+                document.getElementById('recordBtn').classList.add('hidden');
+                document.getElementById('stopBtn').classList.remove('hidden');
+                document.getElementById('recordBtn').classList.add('recording');
+                
+                showProgress();
+                updateProgress(0, 'Recording in progress...');
+
+            } catch (error) {
+                console.error('❌ Recording failed:', error);
+                alert('Could not access microphone. Please check permissions.');
+            }
+        }
+
+        // Stop recording
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                console.log('⏹️ Stopping recording...');
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+
+                // Update UI
+                document.getElementById('recordBtn').classList.remove('hidden');
+                document.getElementById('stopBtn').classList.add('hidden');
+                document.getElementById('recordBtn').classList.remove('recording');
+                
+                updateProgress(20, 'Recording stopped, processing...');
+            }
+        }
+
+        // Process audio file
+        async function processAudioFile(file) {
+            try {
+                updateProgress(30, 'Reading audio file...');
+                const audioBlob = new Blob([file], { type: file.type });
+                await processAudioBlob(audioBlob);
+            } catch (error) {
+                console.error('❌ File processing failed:', error);
+                updateProgress(0, 'File processing failed');
+                alert('Error processing file: ' + error.message);
+            }
+        }
+
+        // Process audio blob (from recording or file)
+        async function processAudioBlob(audioBlob) {
+            try {
+                updateProgress(50, 'Sending to AI backend...');
+                
+                const result = await verbalAPI.transcribeAudio(audioBlob, {
+                    template: currentTemplate,
+                    language: 'en'
+                });
+
+                updateProgress(80, 'Processing transcript...');
+                
+                // Display transcript
+                currentTranscript = result.transcript || 'No speech detected in audio';
+                document.getElementById('transcriptBox').textContent = currentTranscript;
+                
+                // Show speakers if available
+                if (result.speakers && result.speakers.length > 0) {
+                    showSpeakers(result.speakers);
+                }
+                
+                updateProgress(100, 'Complete! ✅');
+                
+                // Enable export buttons
+                enableExportButtons();
+                
+                console.log('✅ Processing complete!');
+
+            } catch (error) {
+                console.error('❌ Processing failed:', error);
+                updateProgress(0, 'Processing failed');
+                
+                // Show fallback message
+                document.getElementById('transcriptBox').textContent = 
+                    `❌ Processing failed: ${error.message}\n\nThis might be because:\n` +
+                    `• Backend is not running (check http://localhost:8000)\n` +
+                    `• Audio file format not supported\n` +
+                    `• Network connection issue\n\n` +
+                    `Try starting the backend with:\npython verba_database_integration.py server`;
+            }
+        }
+
+        // Process current audio (for when user clicks process button)
+        function processCurrentAudio() {
+            // This would be called if audio is loaded but not auto-processed
+            console.log('🤖 Processing current audio...');
+        }
+
+        // Show progress
+        function showProgress() {
+            document.getElementById('progressSection').classList.add('visible');
+        }
+
+        // Update progress
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = message;
+        }
+
+        // Show speakers
+        function showSpeakers(speakers) {
+            const speakerInfo = document.getElementById('speakerInfo');
+            const speakerTags = document.getElementById('speakerTags');
+            
+            speakerTags.innerHTML = '';
+            speakers.forEach((speaker, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'speaker-tag';
+                tag.textContent = `Speaker ${index + 1} (${speaker.duration || '0s'})`;
+                speakerTags.appendChild(tag);
+            });
+            
+            speakerInfo.style.display = 'flex';
+        }
+
+        // Enable export buttons
+        function enableExportButtons() {
+            document.getElementById('exportTxt').disabled = false;
+            document.getElementById('exportPdf').disabled = false;
+            document.getElementById('exportJson').disabled = false;
+        }
+
+        // Export transcript
+        async function exportTranscript(format) {
+            if (!currentTranscript) {
+                alert('No transcript to export');
+                return;
+            }
+
+            try {
+                console.log(`📥 Exporting as ${format}...`);
+                
+                // For now, create simple client-side export
+                // Later this will connect to your backend export endpoint
+                
+                const filename = `verba_transcript_${new Date().toISOString().slice(0,10)}.${format}`;
+                
+                if (format === 'txt') {
+                    downloadTextFile(currentTranscript, filename);
+                } else if (format === 'json') {
+                    const jsonData = {
+                        transcript: currentTranscript,
+                        template: currentTemplate,
+                        timestamp: new Date().toISOString(),
+                        metadata: {
+                            created_by: 'Verba AI',
+                            version: '1.0'
+                        }
+                    };
+                    downloadTextFile(JSON.stringify(jsonData, null, 2), filename);
+                } else {
+                    // For PDF, show message that backend export will be used
+                    alert(`${format.toUpperCase()} export will use backend processing when connected`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Export failed:', error);
+                alert('Export failed: ' + error.message);
+            }
+        }
+
+        // Download text file
+        function downloadTextFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log(`✅ Downloaded: ${filename}`);
+        }
+
+        // Test connection on load and every 30 seconds
+        setInterval(testBackendConnection, 30000);
+    </script>
+</body>
+</html>
+  </body>
+</html>
