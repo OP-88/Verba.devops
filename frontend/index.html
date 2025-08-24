@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verba - AI Meeting Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .chat-message {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .transcription-card {
+            transition: all 0.3s ease;
+        }
+        
+        .transcription-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .pulse-ring {
+            content: '';
+            width: 300px;
+            height: 300px;
+            border: 8px solid #667eea;
+            border-radius: 50%;
+            position: absolute;
+            animation: pulsate 2s ease-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes pulsate {
+            0% {
+                transform: scale(0.1);
+                opacity: 0.0;
+            }
+            50% {
+                opacity: 0.1;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        .recording-button {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .recording-button.recording::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+            
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Main Container -->
+    <div id="app" class="min-h-screen p-4">
+        <!-- Header -->
+        <header class="text-center py-8">
+            <h1 class="text-5xl font-bold text-white mb-4 animate-float">
+                Verba
+            </h1>
+            <p class="text-xl text-white/80">AI-Powered Meeting Assistant</p>
+            <div id="connection-status" class="mt-4 p-2 rounded-lg glass text-white text-sm">
+                🔄 Connecting to Verba API...
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto">
+            <!-- Tabs -->
+            <div class="flex justify-center mb-8">
+                <div class="glass rounded-full p-1">
+                    <button id="tab-transcribe" class="tab-btn active px-6 py-3 rounded-full text-white transition-all">
+                        🎙️ Transcribe
+                    </button>
+                    <button id="tab-chat" class="tab-btn px-6 py-3 rounded-full text-white/70 transition-all">
+                        💬 Chat
+                    </button>
+                    <button id="tab-history" class="tab-btn px-6 py-3 rounded-full text-white/70 transition-all">
+                        📋 History
+                    </button>
+                    <button id="tab-reminders" class="tab-btn px-6 py-3 rounded-full text-white/70 transition-all">
+                        ⏰ Reminders
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="content-area" class="glass rounded-2xl p-8">
+                <!-- Transcription Tab -->
+                <div id="transcribe-content" class="tab-content">
+                    <h2 class="text-2xl font-semibold text-white mb-6 text-center">Upload Audio File</h2>
+                    
+                    <!-- Upload Section -->
+                    <div class="text-center mb-8">
+                        <div class="border-2 border-dashed border-white/30 rounded-2xl p-12 mb-6 transition-all hover:border-white/50">
+                            <input type="file" id="audioInput" accept=".wav,.mp3,.m4a,.flac" class="hidden">
+                            <label for="audioInput" class="cursor-pointer">
+                                <div class="text-6xl mb-4">🎵</div>
+                                <p class="text-white text-lg mb-2">Click to select audio file</p>
+                                <p class="text-white/60">Supports WAV, MP3, M4A, FLAC</p>
+                            </label>
+                        </div>
+                        
+                        <div class="flex gap-4 justify-center mb-6">
+                            <input type="text" id="transcriptionTitle" placeholder="Meeting Title (optional)" 
+                                   class="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/60">
+                            <label class="flex items-center text-white">
+                                <input type="checkbox" id="enableAI" checked class="mr-2">
+                                Enable AI Analysis
+                            </label>
+                        </div>
+                        
+                        <button id="transcribeBtn" class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-8 py-3 rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105">
+                            🎙️ Transcribe Audio
+                        </button>
+                    </div>
+
+                    <!-- Progress -->
+                    <div id="transcription-progress" class="hidden mb-6">
+                        <div class="bg-white/20 rounded-full h-2 mb-2">
+                            <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p class="text-white text-center">Processing audio...</p>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="transcription-results" class="hidden">
+                        <div class="bg-white/10 rounded-xl p-6 mb-6">
+                            <h3 class="text-xl font-semibold text-white mb-4">📝 Transcription</h3>
+                            <div id="transcription-text" class="text-white/90 leading-relaxed"></div>
+                        </div>
+                        
+                        <div id="ai-analysis" class="hidden bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-6 mb-6">
+                            <h3 class="text-xl font-semibold text-white mb-4">🤖 AI Analysis</h3>
+                            <div id="ai-analysis-text" class="text-white/90 leading-relaxed"></div>
+                        </div>
+                        
+                        <div id="suggested-questions" class="hidden bg-blue-500/20 rounded-xl p-6">
+                            <h3 class="text-xl font-semibold text-white mb-4">❓ Suggested Questions</h3>
+                            <div id="questions-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Tab -->
+                <div id="chat-content" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold text-white mb-6 text-center">Chat with AI Assistant</h2>
+                    
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="bg-white/5 rounded-xl p-6 h-96 overflow-y-auto mb-6 space-y-4">
+                        <div class="text-center text-white/60 py-8">
+                            <div class="text-4xl mb-2">🤖</div>
+                            <p>Hi! I'm your AI assistant. Upload a transcription or ask me anything!</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="flex gap-4">
+                        <input type="text" id="chat-input" placeholder="Ask me anything about your meetings..." 
+                               class="flex-1 px-4 py-3 bg-white/10 border border-white/30 rounded-full text-white placeholder-white/60">
+                        <button id="send-chat" class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-6 py-3 rounded-full font-semibold transition-all hover:scale-105">
+                            Send
+                        </button>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history-content" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-white">📋 Transcription History</h2>
+                        <button id="refresh-history" class="bg-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="history-list" class="space-y-4">
+                        <div class="text-center text-white/60 py-12">
+                            <div class="text-4xl mb-4">📋</div>
+                            <p>No transcriptions yet. Upload your first audio file!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reminders Tab -->
+                <div id="reminders-content" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-white">⏰ Reminders</h2>
+                        <button id="add-reminder-btn" class="bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg transition-all hover:scale-105">
+                            ➕ Add Reminder
+                        </button>
+                    </div>
+                    
+                    <!-- Add Reminder Form -->
+                    <div id="add-reminder-form" class="hidden bg-white/10 rounded-xl p-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <input type="text" id="reminder-title" placeholder="Reminder title..." 
+                                   class="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/60">
+                            <select id="reminder-priority" class="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white">
+                                <option value="low">Low Priority</option>
+                                <option value="medium" selected>Medium Priority</option>
+                                <option value="high">High Priority</option>
+                            </select>
+                        </div>
+                        <textarea id="reminder-description" placeholder="Description (optional)..." 
+                                  class="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/60 mb-4"></textarea>
+                        <input type="datetime-local" id="reminder-due-date" 
+                               class="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white mb-4">
+                        <div class="flex gap-4">
+                            <button id="save-reminder" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
+                                💾 Save
+                            </button>
+                            <button id="cancel-reminder" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+                                ❌ Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="reminders-list" class="space-y-4">
+                        <div class="text-center text-white/60 py-12">
+                            <div class="text-4xl mb-4">⏰</div>
+                            <p>No reminders yet. Add your first reminder!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Verba API Client for Advanced Backend
+        class VerbaAPI {
+            constructor(baseUrl = 'http://localhost:8000') {
+                this.baseUrl = baseUrl;
+                this.sessionId = this.generateSessionId();
+            }
+
+            generateSessionId() {
+                return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            }
+
+            async checkHealth() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/`);
+                    return await response.json();
+                } catch (error) {
+                    console.error('Health check failed:', error);
+                    return null;
+                }
+            }
+
+            async transcribeAudio(file, title = 'Meeting Transcript', enableAI = true) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('session_id', this.sessionId);
+                formData.append('title', title);
+
+                const response = await fetch(`${this.baseUrl}/transcribe`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Transcription failed: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async chatWithAI(message, transcriptionId = null) {
+                const response = await fetch(`${this.baseUrl}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message,
+                        session_id: this.sessionId,
+                        context_type: 'general_chat',
+                        transcription_id: transcriptionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Chat failed: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async getTranscriptions(limit = 20, offset = 0) {
+                const response = await fetch(
+                    `${this.baseUrl}/transcriptions?session_id=${this.sessionId}&limit=${limit}&offset=${offset}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Failed to get transcriptions: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async getTranscription(transcriptionId) {
+                const response = await fetch(
+                    `${this.baseUrl}/transcriptions/${transcriptionId}?session_id=${this.sessionId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Failed to get transcription: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async createReminder(title, description = '', dueDate = null, priority = 'medium', sourceTranscriptionId = null) {
+                const response = await fetch(`${this.baseUrl}/reminders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        due_date: dueDate,
+                        priority,
+                        session_id: this.sessionId,
+                        source_transcription_id: sourceTranscriptionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to create reminder: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async getReminders(status = null) {
+                let url = `${this.baseUrl}/reminders?session_id=${this.sessionId}`;
+                if (status) {
+                    url += `&status=${status}`;
+                }
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to get reminders: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+
+            async updateReminderStatus(reminderId, status) {
+                const response = await fetch(
+                    `${this.baseUrl}/reminders/${reminderId}?status=${status}&session_id=${this.sessionId}`,
+                    { method: 'PUT' }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`Failed to update reminder: ${response.statusText}`);
+                }
+
+                return await response.json();
+            }
+        }
+
+        // Initialize API client
+        const api = new VerbaAPI();
+        let currentTranscriptionId = null;
+
+        // DOM Elements
+        const connectionStatus = document.getElementById('connection-status');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Tab switching
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.id.replace('tab-', '');
+                switchTab(tabId);
+            });
+        });
+
+        function switchTab(tabId) {
+            // Update buttons
+            tabBtns.forEach(btn => {
+                if (btn.id === `tab-${tabId}`) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-white/70');
+                    btn.classList.add('bg-white/20');
+                } else {
+                    btn.classList.remove('active', 'bg-white/20');
+                    btn.classList.add('text-white/70');
+                }
+            });
+
+            // Update content
+            tabContents.forEach(content => {
+                if (content.id === `${tabId}-content`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+
+            // Load data when switching to certain tabs
+            if (tabId === 'history') {
+                loadTranscriptionHistory();
+            } else if (tabId === 'reminders') {
+                loadReminders();
+            }
+        }
+
+        // Transcription functionality
+        const audioInput = document.getElementById('audioInput');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const transcriptionTitle = document.getElementById('transcriptionTitle');
+        const enableAI = document.getElementById('enableAI');
+
+        transcribeBtn.addEventListener('click', handleTranscription);
+        audioInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                transcribeBtn.disabled = false;
+                transcribeBtn.textContent = `🎙️ Transcribe ${e.target.files[0].name}`;
+            }
+        });
+
+        async function handleTranscription() {
+            const file = audioInput.files[0];
+            if (!file) {
+                alert('Please select an audio file first');
+                return;
+            }
+
+            const title = transcriptionTitle.value || 'Meeting Transcript';
+            const aiEnabled = enableAI.checked;
+
+            try {
+                // Show progress
+                showTranscriptionProgress();
+                
+                // Call API
+                const result = await api.transcribeAudio(file, title, aiEnabled);
+                console.log('Transcription result:', result);
+
+                // Hide progress
+                hideTranscriptionProgress();
+
+                // Show results
+                displayTranscriptionResults(result);
+                
+                // Store current transcription ID for chat context
+                currentTranscriptionId = result.transcription_id;
+
+            } catch (error) {
+                hideTranscriptionProgress();
+                console.error('Transcription failed:', error);
+                alert(`Transcription failed: ${error.message}`);
+            }
+        }
+
+        function showTranscriptionProgress() {
+            const progress = document.getElementById('transcription-progress');
+            progress.classList.remove('hidden');
+            
+            const progressBar = progress.querySelector('div div');
+            let width = 0;
+            
+            const interval = setInterval(() => {
+                width += 2;
+                progressBar.style.width = `${Math.min(width, 90)}%`;
+                
+                if (width >= 90) {
+                    clearInterval(interval);
+                }
+            }, 100);
+        }
+
+        function hideTranscriptionProgress() {
+            const progress = document.getElementById('transcription-progress');
+            progress.classList.add('hidden');
+        }
+
+        function displayTranscriptionResults(result) {
+            const resultsDiv = document.getElementById('transcription-results');
+            const textDiv = document.getElementById('transcription-text');
+            const aiAnalysisDiv = document.getElementById('ai-analysis');
+            const aiAnalysisText = document.getElementById('ai-analysis-text');
+            const questionsDiv = document.getElementById('suggested-questions');
+            const questionsList = document.getElementById('questions-list');
+
+            // Show transcription text
+            textDiv.textContent = result.transcription.text;
+            resultsDiv.classList.remove('hidden');
+
+            // Show AI analysis if available
+            if (result.ai_analysis) {
+                aiAnalysisText.textContent = result.ai_analysis;
+                aiAnalysisDiv.classList.remove('hidden');
+            }
+
+            // Show suggested questions if available
+            if (result.suggested_questions && result.suggested_questions.length > 0) {
+                questionsList.innerHTML = '';
+                result.suggested_questions.forEach(question => {
+                    const questionBtn = document.createElement('button');
+                    questionBtn.className = 'w-full text-left p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-all';
+                    questionBtn.textContent = question;
+                    questionBtn.addEventListener('click', () => {
+                        switchTab('chat');
+                        document.getElementById('chat-input').value = question;
+                    });
+                    questionsList.appendChild(questionBtn);
+                });
+                questionsDiv.classList.remove('hidden');
+            }
+        }
+
+        // Chat functionality
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat');
+        const chatMessages = document.getElementById('chat-messages');
+
+        sendChatBtn.addEventListener('click', handleChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleChatMessage();
+            }
+        });
+
+        async function handleChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addChatMessage(message, 'user');
+            chatInput.value = '';
+
+            try {
+                // Send to AI
+                const response = await api.chatWithAI(message, currentTranscriptionId);
+                
+                // Add AI response to chat
+                addChatMessage(response.response, 'assistant');
+
+            } catch (error) {
+                console.error('Chat failed:', error);
+                addChatMessage(`Sorry, I encountered an error: ${error.message}`, 'error');
+            }
+        }
+
+        function addChatMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-xl ${
+                type === 'user' 
+                    ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white' 
+                    : type === 'error'
+                    ? 'bg-red-500/80 text-white'
+                    : 'bg-white/20 text-white'
+            }`;
+            bubble.textContent = message;
+
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+
+            // Clear welcome message if it exists
+            const welcome = chatMessages.querySelector('.text-white\\/60');
+            if (welcome && welcome.parentElement) {
+                welcome.parentElement.remove();
+            }
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // History functionality
+        async function loadTranscriptionHistory() {
+            try {
+                const historyData = await api.getTranscriptions(20, 0);
+                displayTranscriptionHistory(historyData.transcriptions);
+            } catch (error) {
+                console.error('Failed to load history:', error);
+            }
+        }
+
+        function displayTranscriptionHistory(transcriptions) {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+
+            if (transcriptions.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center text-white/60 py-12">
+                        <div class="text-4xl mb-4">📋</div>
+                        <p>No transcriptions yet. Upload your first audio file!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            transcriptions.forEach(transcription => {
+                const card = document.createElement('div');
+                card.className = 'transcription-card bg-white/10 rounded-xl p-6 cursor-pointer';
+                
+                const date = new Date(transcription.created_at).toLocaleDateString();
+                const preview = transcription.transcription_text.substring(0, 150) + '...';
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="text-lg font-semibold text-white">${transcription.title}</h3>
+                        <span class="text-sm text-white/60">${date}</span>
+                    </div>
+                    <p class="text-white/80 text-sm mb-3">${preview}</p>
+                    <div class="flex justify-between items-center">
+                        <div class="text-xs text-white/60">
+                            Duration: ${transcription.duration_seconds}s | 
+                            Confidence: ${(transcription.confidence_score * 100).toFixed(1)}%
+                        </div>
+                        <button class="text-blue-300 hover:text-blue-200 text-sm">View Details →</button>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    // Could implement detailed view here
+                    console.log('View transcription:', transcription.id);
+                });
+                
+                historyList.appendChild(card);
+            });
+        }
+
+        // Reminders functionality
+        const addReminderBtn = document.getElementById('add-reminder-btn');
+        const addReminderForm = document.getElementById('add-reminder-form');
+        const saveReminderBtn = document.getElementById('save-reminder');
+        const cancelReminderBtn = document.getElementById('cancel-reminder');
+
+        addReminderBtn.addEventListener('click', () => {
+            addReminderForm.classList.remove('hidden');
+        });
+
+        cancelReminderBtn.addEventListener('click', () => {
+            addReminderForm.classList.add('hidden');
+            clearReminderForm();
+        });
+
+        saveReminderBtn.addEventListener('click', handleCreateReminder);
+
+        async function handleCreateReminder() {
+            const title = document.getElementById('reminder-title').value.trim();
+            const description = document.getElementById('reminder-description').value.trim();
+            const dueDate = document.getElementById('reminder-due-date').value;
+            const priority = document.getElementById('reminder-priority').value;
+
+            if (!title) {
+                alert('Please enter a reminder title');
+                return;
+            }
+
+            try {
+                await api.createReminder(title, description, dueDate || null, priority, currentTranscriptionId);
+                addReminderForm.classList.add('hidden');
+                clearReminderForm();
+                loadReminders();
+            } catch (error) {
+                console.error('Failed to create reminder:', error);
+                alert(`Failed to create reminder: ${error.message}`);
+            }
+        }
+
+        function clearReminderForm() {
+            document.getElementById('reminder-title').value = '';
+            document.getElementById('reminder-description').value = '';
+            document.getElementById('reminder-due-date').value = '';
+            document.getElementById('reminder-priority').value = 'medium';
+        }
+
+        async function loadReminders() {
+            try {
+                const remindersData = await api.getReminders();
+                displayReminders(remindersData.reminders);
+            } catch (error) {
+                console.error('Failed to load reminders:', error);
+            }
+        }
+
+        function displayReminders(reminders) {
+            const remindersList = document.getElementById('reminders-list');
+            remindersList.innerHTML = '';
+
+            if (reminders.length === 0) {
+                remindersList.innerHTML = `
+                    <div class="text-center text-white/60 py-12">
+                        <div class="text-4xl mb-4">⏰</div>
+                        <p>No reminders yet. Add your first reminder!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            reminders.forEach(reminder => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/10 rounded-xl p-6 mb-4';
+                
+                const dueDate = reminder.due_date ? new Date(reminder.due_date).toLocaleDateString() : 'No due date';
+                const priorityColors = {
+                    low: 'bg-green-500',
+                    medium: 'bg-yellow-500', 
+                    high: 'bg-red-500'
+                };
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full ${priorityColors[reminder.priority]}"></span>
+                            <h3 class="text-lg font-semibold text-white">${reminder.title}</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            ${reminder.status === 'pending' ? 
+                                `<button class="complete-reminder bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600" data-id="${reminder.id}">✅ Complete</button>` : 
+                                `<span class="text-green-400 text-sm">✅ Completed</span>`
+                            }
+                        </div>
+                    </div>
+                    ${reminder.description ? `<p class="text-white/80 text-sm mb-3">${reminder.description}</p>` : ''}
+                    <div class="text-xs text-white/60">
+                        Due: ${dueDate} | Priority: ${reminder.priority.charAt(0).toUpperCase() + reminder.priority.slice(1)}
+                    </div>
+                `;
+                
+                // Add complete button functionality
+                const completeBtn = card.querySelector('.complete-reminder');
+                if (completeBtn) {
+                    completeBtn.addEventListener('click', async () => {
+                        try {
+                            await api.updateReminderStatus(reminder.id, 'completed');
+                            loadReminders(); // Refresh the list
+                        } catch (error) {
+                            console.error('Failed to complete reminder:', error);
+                        }
+                    });
+                }
+                
+                remindersList.appendChild(card);
+            });
+        }
+
+        // Refresh history button
+        document.getElementById('refresh-history').addEventListener('click', loadTranscriptionHistory);
+
+        // Initialize app
+        async function initializeApp() {
+            try {
+                const health = await api.checkHealth();
+                if (health) {
+                    connectionStatus.innerHTML = '✅ Connected to Verba API';
+                    connectionStatus.className = 'mt-4 p-2 rounded-lg glass text-green-300 text-sm';
+                    console.log('Verba API Status:', health);
+                } else {
+                    connectionStatus.innerHTML = '❌ Failed to connect to Verba API';
+                    connectionStatus.className = 'mt-4 p-2 rounded-lg glass text-red-300 text-sm';
+                }
+            } catch (error) {
+                connectionStatus.innerHTML = '❌ Connection error - Check if backend is running on port 8000';
+                connectionStatus.className = 'mt-4 p-2 rounded-lg glass text-red-300 text-sm';
+                console.error('Connection error:', error);
+            }
+        }
+
+        // Start the app
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            
+            // Add some initial chat context
+            setTimeout(() => {
+                if (chatMessages.children.length <= 1) {
+                    addChatMessage("Hi! I'm your AI meeting assistant. I can help you analyze transcriptions, answer questions, and manage your meetings. Try uploading an audio file first!", 'assistant');
+                }
+            }, 1000);
+        });
+
+    </script>
+</body>
+</html>
