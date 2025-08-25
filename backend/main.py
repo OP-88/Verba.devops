@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-🎯 VERBA BACKEND DATABASE INTEGRATION
-Adds database functionality to your existing working backend
+🎯 VERBA BACKEND DATABASE INTEGRATION - ENHANCED VERSION
+Complete backend with enhanced database connection management
 """
 
 import os
@@ -17,6 +17,9 @@ from typing import Optional, Dict, List, Any, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import hashlib
+import threading
+from contextlib import contextmanager
+from queue import Queue, Empty
 
 import numpy as np
 import torch
@@ -81,20 +84,107 @@ class AudioSegment:
     sample_rate: int
     confidence: float = 1.0
 
-# Database Manager
-class VerbaDatabaseManager:
-    """Handles all database operations for Verba"""
+# Enhanced Database Manager with Connection Pooling
+class EnhancedVerbaDatabaseManager:
+    """Enhanced database manager with connection pooling and better concurrency"""
     
-    def __init__(self, db_path: str = "verba_app.db"):
+    def __init__(self, db_path: str = "verba_app.db", pool_size: int = 5):
         self.db_path = db_path
+        self.pool_size = pool_size
+        self.connection_pool = Queue(maxsize=pool_size)
+        self.lock = threading.RLock()  # Reentrant lock
+        
+        # Initialize connection pool
+        self._initialize_pool()
         self.init_database()
-        logger.info(f"✅ Database initialized: {db_path}")
+        logger.info(f"✅ Enhanced Database initialized: {db_path} (pool size: {pool_size})")
     
-    def get_connection(self) -> sqlite3.Connection:
-        """Get database connection with proper settings"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Enable dict-like access
+    def _initialize_pool(self):
+        """Initialize connection pool with optimized connections"""
+        for _ in range(self.pool_size):
+            conn = self._create_optimized_connection()
+            self.connection_pool.put(conn)
+    
+    def _create_optimized_connection(self) -> sqlite3.Connection:
+        """Create an optimized SQLite connection"""
+        conn = sqlite3.Connection(
+            self.db_path,
+            timeout=30.0,
+            check_same_thread=False,
+            isolation_level=None  # Autocommit mode for better concurrency
+        )
+        
+        # Optimize for concurrent access
+        conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
+        conn.execute("PRAGMA synchronous=NORMAL")  # Faster but still safe
+        conn.execute("PRAGMA temp_store=MEMORY")  # Keep temp data in RAM
+        conn.execute("PRAGMA mmap_size=268435456")  # 256MB memory mapping
+        conn.execute("PRAGMA cache_size=10000")  # Larger cache
+        conn.execute("PRAGMA busy_timeout=30000")  # 30 second busy timeout
+        
+        conn.row_factory = sqlite3.Row
         return conn
+    
+    @contextmanager
+    def get_connection(self):
+        """Get connection from pool with proper cleanup"""
+        conn = None
+        try:
+            # Get connection from pool (with timeout)
+            try:
+                conn = self.connection_pool.get(timeout=5.0)
+            except Empty:
+                # Pool exhausted, create temporary connection
+                logger.warning("Connection pool exhausted, creating temporary connection")
+                conn = self._create_optimized_connection()
+                
+            yield conn
+            
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e).lower():
+                # Retry logic for locked database
+                logger.warning(f"Database locked, retrying: {e}")
+                time.sleep(0.1)  # Small delay
+                try:
+                    if conn:
+                        conn.close()
+                    conn = self._create_optimized_connection()
+                    yield conn
+                except Exception as retry_error:
+                    logger.error(f"Retry failed: {retry_error}")
+                    raise e
+            else:
+                raise e
+        except Exception as e:
+            logger.error(f"Database connection error: {e}")
+            raise e
+        finally:
+            if conn:
+                try:
+                    # Return connection to pool or close if pool is full
+                    try:
+                        self.connection_pool.put_nowait(conn)
+                    except:
+                        conn.close()
+                except Exception as e:
+                    logger.warning(f"Connection cleanup warning: {e}")
+    
+    def execute_with_retry(self, query: str, params: tuple = (), retries: int = 3):
+        """Execute query with retry logic"""
+        for attempt in range(retries):
+            try:
+                with self.get_connection() as conn:
+                    cursor = conn.execute(query, params)
+                    conn.commit()
+                    return cursor
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e).lower() and attempt < retries - 1:
+                    wait_time = 0.1 * (2 ** attempt)  # Exponential backoff
+                    logger.warning(f"Database locked, retry {attempt + 1}/{retries} in {wait_time}s")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise e
     
     def init_database(self):
         """Initialize database with all required tables"""
@@ -187,24 +277,36 @@ class VerbaDatabaseManager:
     
     def save_transcription(self, result: TranscriptionResult, session_id: str, 
                           title: str, audio_file_path: Optional[str] = None) -> int:
-        """Save transcription result to database"""
-        with self.get_connection() as conn:
-            cursor = conn.execute("""
-                INSERT INTO transcriptions (
-                    session_id, title, transcription_text, audio_file_path,
-                    duration_seconds, confidence_score, processing_time_ms,
-                    model_used, chunks_processed, vad_segments, metadata_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                session_id, title, result.text, audio_file_path,
-                result.duration, result.confidence, int(result.processing_time * 1000),
-                result.model_used, result.chunks_processed, result.vad_segments,
-                json.dumps(result.metadata)
-            ))
-            
-            transcription_id = cursor.lastrowid
-            self.update_usage_stats('transcription')
-            return transcription_id
+        """Save transcription result to database with retry logic"""
+        try:
+            with self.get_connection() as conn:
+                # Begin explicit transaction
+                conn.execute("BEGIN IMMEDIATE")
+                
+                cursor = conn.execute("""
+                    INSERT INTO transcriptions (
+                        session_id, title, transcription_text, audio_file_path,
+                        duration_seconds, confidence_score, processing_time_ms,
+                        model_used, chunks_processed, vad_segments, metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    session_id, title, result.text, audio_file_path,
+                    result.duration, result.confidence, int(result.processing_time * 1000),
+                    result.model_used, result.chunks_processed, result.vad_segments,
+                    json.dumps(result.metadata)
+                ))
+                
+                transcription_id = cursor.lastrowid
+                
+                # Update usage stats in same transaction
+                self._update_usage_stats_internal(conn, 'transcription')
+                
+                conn.execute("COMMIT")
+                return transcription_id
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to save transcription: {e}")
+            raise
     
     def get_transcriptions(self, session_id: str, limit: int = 20, offset: int = 0) -> List[Dict]:
         """Get transcriptions for a session"""
@@ -246,18 +348,27 @@ class VerbaDatabaseManager:
     def save_ai_conversation(self, session_id: str, conversation_id: str,
                            message_type: str, content: str, context_type: str = "general_chat",
                            transcription_id: Optional[int] = None, processing_time_ms: int = 0):
-        """Save AI conversation message"""
-        with self.get_connection() as conn:
-            conn.execute("""
-                INSERT INTO ai_conversations (
-                    session_id, conversation_id, message_type, message_content,
-                    context_type, transcription_id, processing_time_ms
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (session_id, conversation_id, message_type, content, 
-                  context_type, transcription_id, processing_time_ms))
-            
-            if message_type == 'user':
-                self.update_usage_stats('ai_query')
+        """Save AI conversation message with retry logic"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                
+                conn.execute("""
+                    INSERT INTO ai_conversations (
+                        session_id, conversation_id, message_type, message_content,
+                        context_type, transcription_id, processing_time_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (session_id, conversation_id, message_type, content, 
+                      context_type, transcription_id, processing_time_ms))
+                
+                if message_type == 'user':
+                    self._update_usage_stats_internal(conn, 'ai_query')
+                
+                conn.execute("COMMIT")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to save AI conversation: {e}")
+            raise
     
     def get_ai_conversations(self, session_id: str, conversation_id: Optional[str] = None,
                            limit: int = 50) -> List[Dict]:
@@ -363,49 +474,64 @@ class VerbaDatabaseManager:
             
             return settings
     
-    def update_usage_stats(self, stat_type: str):
-        """Update daily usage statistics"""
-        today = datetime.now().date()
+    def _update_usage_stats_internal(self, conn: sqlite3.Connection, stat_type: str):
+        """Internal method to update usage stats within existing transaction"""
+        today = datetime.now().date().isoformat()
         
-        with self.get_connection() as conn:
-            # Get or create today's stats
-            cursor = conn.execute("SELECT * FROM usage_stats WHERE date = ?", (today,))
-            stats = cursor.fetchone()
-            
-            if stats:
-                # Update existing stats
-                if stat_type == 'transcription':
-                    conn.execute("""
-                        UPDATE usage_stats 
-                        SET total_transcriptions = total_transcriptions + 1 
-                        WHERE date = ?
-                    """, (today,))
-                elif stat_type == 'ai_query':
-                    conn.execute("""
-                        UPDATE usage_stats 
-                        SET ai_queries_count = ai_queries_count + 1 
-                        WHERE date = ?
-                    """, (today,))
-                elif stat_type == 'reminder':
-                    conn.execute("""
-                        UPDATE usage_stats 
-                        SET reminders_created = reminders_created + 1 
-                        WHERE date = ?
-                    """, (today,))
-            else:
-                # Create new stats entry
-                initial_values = {
-                    'transcription': (1, 0, 0, 0),
-                    'ai_query': (0, 0, 1, 0),
-                    'reminder': (0, 0, 0, 1)
-                }
-                
-                values = initial_values.get(stat_type, (0, 0, 0, 0))
+        # Check if entry exists
+        cursor = conn.execute("SELECT id FROM usage_stats WHERE date = ?", (today,))
+        exists = cursor.fetchone()
+        
+        if exists:
+            # Update existing stats
+            if stat_type == 'transcription':
+                conn.execute("""
+                    UPDATE usage_stats 
+                    SET total_transcriptions = total_transcriptions + 1 
+                    WHERE date = ?
+                """, (today,))
+            elif stat_type == 'ai_query':
+                conn.execute("""
+                    UPDATE usage_stats 
+                    SET ai_queries_count = ai_queries_count + 1 
+                    WHERE date = ?
+                """, (today,))
+            elif stat_type == 'reminder':
+                conn.execute("""
+                    UPDATE usage_stats 
+                    SET reminders_created = reminders_created + 1 
+                    WHERE date = ?
+                """, (today,))
+        else:
+            # Create new stats entry
+            if stat_type == 'transcription':
                 conn.execute("""
                     INSERT INTO usage_stats 
                     (date, total_transcriptions, total_duration_minutes, ai_queries_count, reminders_created)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (today, *values))
+                    VALUES (?, 1, 0, 0, 0)
+                """, (today,))
+            elif stat_type == 'ai_query':
+                conn.execute("""
+                    INSERT INTO usage_stats 
+                    (date, total_transcriptions, total_duration_minutes, ai_queries_count, reminders_created)
+                    VALUES (?, 0, 0, 1, 0)
+                """, (today,))
+            elif stat_type == 'reminder':
+                conn.execute("""
+                    INSERT INTO usage_stats 
+                    (date, total_transcriptions, total_duration_minutes, ai_queries_count, reminders_created)
+                    VALUES (?, 0, 0, 0, 1)
+                """, (today,))
+    
+    def update_usage_stats(self, stat_type: str):
+        """Update daily usage statistics with connection pooling"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                self._update_usage_stats_internal(conn, stat_type)
+                conn.execute("COMMIT")
+        except Exception as e:
+            logger.error(f"❌ Failed to update usage stats: {e}")
     
     def get_usage_stats(self, days: int = 30) -> List[Dict]:
         """Get usage statistics for last N days"""
@@ -443,6 +569,25 @@ class VerbaDatabaseManager:
             """, (reminder_cutoff,))
             
             logger.info(f"✅ Cleaned up data older than {days_to_keep} days")
+    
+    def health_check(self) -> bool:
+        """Check database health"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("SELECT 1").fetchone()
+                return True
+        except Exception as e:
+            logger.error(f"❌ Database health check failed: {e}")
+            return False
+    
+    def close_all_connections(self):
+        """Close all connections in pool (for shutdown)"""
+        while not self.connection_pool.empty():
+            try:
+                conn = self.connection_pool.get_nowait()
+                conn.close()
+            except:
+                break
 
 # Your existing services (unchanged)
 class CompatibleVADService:
@@ -716,7 +861,7 @@ class VerbaIntegratedSystem:
     """Complete Verba system with database integration"""
     
     def __init__(self, db_path: str = "verba_app.db"):
-        self.db = VerbaDatabaseManager(db_path)
+        self.db = EnhancedVerbaDatabaseManager(db_path)
         self.transcription_service = EnhancedTranscriptionService()
         self.ai_assistant = None
         
@@ -840,6 +985,12 @@ def create_verba_app() -> FastAPI:
     
     # Initialize system
     verba_system = VerbaIntegratedSystem()
+    
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        """Cleanup connections on shutdown"""
+        verba_system.db.close_all_connections()
+        logger.info("✅ Database connections closed")
     
     @app.get("/")
     async def root():
@@ -1105,12 +1256,12 @@ def create_verba_app() -> FastAPI:
 
 def test_database_integration():
     """Test the database integration"""
-    print("🧪 Testing Database Integration...")
+    print("🧪 Testing Enhanced Database Integration...")
     
     try:
         # Test database manager
-        db = VerbaDatabaseManager("test_verba.db")
-        print("✅ Database initialized")
+        db = EnhancedVerbaDatabaseManager("test_verba.db")
+        print("✅ Enhanced Database initialized")
         
         # Test session ID generation
         session_id = generate_session_id()
@@ -1143,11 +1294,19 @@ def test_database_integration():
         stats = db.get_usage_stats(1)
         print(f"✅ Usage stats: {len(stats)} entries")
         
+        # Test database health
+        health = db.health_check()
+        print(f"✅ Database health check: {'Passed' if health else 'Failed'}")
+        
+        # Test connection pool
+        db.close_all_connections()
+        print("✅ Connection pool cleanup successful")
+        
         # Cleanup test database
         os.unlink("test_verba.db")
         print("✅ Test database cleaned up")
         
-        print("🎉 Database integration testing complete!")
+        print("🎉 Enhanced database integration testing complete!")
         
     except Exception as e:
         print(f"❌ Database test failed: {e}")
@@ -1159,7 +1318,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         # Test database integration
         if test_database_integration():
-            print("\n✅ All tests passed! Ready to run with database integration.")
+            print("\n✅ All tests passed! Ready to run with enhanced database integration.")
         else:
             print("\n❌ Tests failed. Check the output above.")
     elif len(sys.argv) > 1 and sys.argv[1] == "server":
@@ -1167,8 +1326,8 @@ if __name__ == "__main__":
         app = create_verba_app()
         uvicorn.run(app, host="0.0.0.0", port=8000)
     else:
-        print("🎯 Verba Integrated System with Database")
+        print("🎯 Verba Enhanced System with Database Connection Pooling")
         print("Commands:")
-        print("  python verba_database_integration.py test    # Test the system")
-        print("  python verba_database_integration.py server  # Start the server")
-        print("  uvicorn verba_database_integration:create_verba_app --host 0.0.0.0 --port 8000")
+        print("  python main.py test    # Test the enhanced system")
+        print("  python main.py server  # Start the enhanced server")
+        print("  uvicorn main:create_verba_app --host 0.0.0.0 --port 8000")
