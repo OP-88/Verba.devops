@@ -1,412 +1,402 @@
-# 🎙️ Verba - AI-Powered Meeting Assistant
+# 🎙️ Verba Audio Transcription System
 
 <div align="center">
 
-![Verba Logo](https://img.shields.io/badge/Verba-AI%20Meeting%20Assistant-0A1F44?style=for-the-badge&logo=microphone&logoColor=white)
+**🚀 Enhanced AI-powered audio transcription with real-time microphone recording**
 
-**Professional meeting transcription and AI analysis - 100% offline, 100% free**
+[![Status](https://img.shields.io/badge/Status-✅_Operational-brightgreen?style=for-the-badge)](https://github.com/marc-254/Verba.devops)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-4+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![OpenAI Whisper](https://img.shields.io/badge/OpenAI-Whisper-412991.svg)](https://github.com/openai/whisper)
+*Open-source • Offline-capable • Production-ready*
 
-[🚀 Quick Start](#-quick-start) • [📖 Features](#-features) • [💻 Demo](#-demo) • [📚 Documentation](#-documentation) • [🤝 Contributing](#-contributing)
-
----
-
-*Transform your meetings into actionable insights with enterprise-grade AI transcription that runs entirely on your device*
+[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [📖 Documentation](#-documentation) • [🤝 Contributing](#-contributing)
 
 </div>
 
-## ✨ **Why Verba?**
+---
 
-Verba democratizes professional meeting transcription by offering **enterprise-grade features** without the enterprise price tag. Unlike Otter.ai ($200+/year), Tactiq, or Krisp, Verba:
+## 🌟 Overview
 
-- **🔒 Protects Your Privacy** - 100% offline processing, zero data collection
-- **💰 Costs Nothing** - Free forever, sustained by voluntary donations  
-- **⚡ Works Anywhere** - No internet required, runs on 4GB RAM devices
-- **🎯 Professional Quality** - Real-time transcription + AI-powered summaries
-- **🛡️ Open Source** - Full transparency, customizable, no vendor lock-in
+**Verba** is a cutting-edge audio transcription system that combines the power of OpenAI Whisper with modern web technologies. Designed for **students**, **professionals**, and **content creators**, it offers real-time microphone recording, intelligent content detection, and specialized processing for music and rap transcription.
 
-> **Perfect for:** Students recording lectures, professionals in secure environments, remote teams, and anyone who values privacy and cost-effectiveness.
+> **🎯 Perfect for:** Meeting notes • Lecture transcription • Music lyrics • Podcast processing • Voice memos
 
-## 🚀 **Quick Start**
+### 🎭 What Makes Verba Special?
 
-Get Verba running in under 2 minutes:
+- **🎤 Real-time Recording** - Browser-based microphone capture with visual feedback
+- **🧠 Smart AI Processing** - Whisper "base" model with context-aware prompting  
+- **🎵 Music Optimized** - Specialized handling for rap, hip-hop, and musical content
+- **🌐 Offline First** - No internet required, privacy-focused
+- **⚡ Modern Stack** - React + TypeScript + Vite + FastAPI
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎤 **Real-Time Audio**
+- **Live microphone capture** via WebRTC
+- **Visual audio levels** with recording timer
+- **Automatic processing** when recording stops
+- **Cross-browser support** (Chrome, Firefox, Safari)
+
+</td>
+<td width="50%">
+
+### 🚀 **Enhanced AI Transcription** 
+- **OpenAI Whisper "base"** model (upgraded accuracy)
+- **Smart content detection** (Speech vs Music)
+- **Context-aware prompting** for specialized content
+- **90+ languages** supported natively
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 💎 **Modern Interface**
+- **Glassmorphism UI** with beautiful gradients
+- **Responsive design** across all devices
+- **Mode switching** (microphone vs file upload)
+- **Enhanced history** with metadata badges
+
+</td>
+<td>
+
+### 📊 **Advanced Backend**
+- **FastAPI** with automatic documentation
+- **SQLite** with connection pooling
+- **Processing metrics** tracking
+- **Content classification** system
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
+
+### 📋 Prerequisites
 
 ```bash
-# 1. Clone the repository
+Node.js 16+    # Frontend development
+Python 3.8+    # Backend processing  
+4GB+ RAM       # For Whisper base model
+```
+
+### ⚡ Installation
+
+**1️⃣ Clone Repository**
+```bash
 git clone https://github.com/marc-254/Verba.devops.git
 cd Verba.devops
-
-# 2. Set up the backend
-cd backend
-pip install -r requirements.txt
-
-# 3. Start the services
-# Terminal 1: Backend
-python verba_database_integration.py server
-
-# Terminal 2: Frontend (in project root)
-python -m http.server 8080
 ```
 
-**🎉 That's it!** Open `http://localhost:8080` and start transcribing.
-
-## 📖 **Features**
-
-### **🎙️ Real-Time Transcription**
-- **OpenAI Whisper Integration** - Industry-leading accuracy with multiple model sizes
-- **Voice Activity Detection** - Intelligent audio segmentation with adjustable sensitivity
-- **Multiple Input Modes** - Microphone or system audio capture
-- **Universal Format Support** - WAV, MP3, FLAC, M4A, OGG files
-- **60-80% Performance Boost** - Optimized processing pipeline with parallel processing
-
-### **🌍 Multi-Language Support**
-- **10 Languages Supported** - English, Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese, Korean
-- **Auto-Detection** - Automatic language identification from audio
-- **Custom Vocabulary** - Add technical terms, names, and acronyms for better accuracy
-- **Language-Specific Templates** - Optimized prompts and processing for each language
-
-### **👥 Advanced Speaker Features**
-- **Speaker Identification** - Automatic speaker detection and separation
-- **Speaker Diarization** - "Who said what" with configurable speaker counts
-- **Custom Speaker Names** - Label speakers with actual names
-- **Speaking Time Analytics** - Track participation and engagement metrics
-
-### **📋 Meeting Templates & Presets**
-- **Smart Templates** - Standup, Client Meeting, Lecture/Training, Interview presets
-- **Context-Aware Processing** - Template-specific vocabulary and analysis
-- **Custom Prompts** - Pre-configured questions and focus areas
-- **Intelligent Summaries** - Template-optimized summary generation
-
-### **🤖 AI-Powered Analysis**  
-- **Automatic Summaries** - Comprehensive meeting overviews with key points
-- **Action Item Extraction** - Identify tasks, owners, and deadlines
-- **Decision Tracking** - Capture important decisions and outcomes
-- **Intelligent Q&A** - Ask detailed questions about meeting content
-- **Context Understanding** - Deep analysis of meeting flow and participant insights
-
-### **🔧 Technical Excellence**
-- **Lightning Fast** - 1.2s model loading (vs 60s industry standard)
-- **Memory Optimized** - Runs smoothly on 4GB RAM devices
-- **Offline First** - Complete functionality without internet after setup
-- **Privacy Focused** - Anonymous sessions, zero data collection
-- **Zero Dependencies** - Single HTML file deployment, no npm updates
-
-### **📊 Advanced Export Options**
-- **Multiple Formats** - TXT, PDF, DOCX, JSON export capabilities
-- **Rich Metadata** - Timestamps, speaker labels, meeting analytics
-- **Template Integration** - Export includes template-specific formatting
-- **Batch Processing** - Handle multiple files simultaneously
-- **Cloud Integration Ready** - Optional backup and sync capabilities
-
-### **💎 Premium User Experience**
-- **Modern UI** - Professional navy-themed design with smooth animations
-- **Smart Templates** - Pre-configured meeting types with optimized settings  
-- **Drag & Drop** - Intuitive file upload with visual feedback
-- **Multi-Language Interface** - Support for 10 major languages
-- **Real-Time Analytics** - Live meeting metrics and participation tracking
-- **Custom Vocabulary** - Technical term recognition for specialized domains
-- **Mobile Responsive** - Perfect experience across all devices
-- **Keyboard Shortcuts** - `Ctrl+T` to start/stop, plus many more
-
-## 💻 **Demo**
-
-### **Enhanced AI Analysis**
-```
-🎯 Meeting Summary (Auto-generated)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 Key Points (Standup Template):
-• Sprint velocity on track - 8 story points completed
-• Database migration scheduled for Friday deployment
-• New API endpoints tested and ready for release
-
-👥 Speaker Breakdown:
-• John (Team Lead): 2m 15s - Project updates, timeline
-• Sarah (Developer): 1m 45s - Technical blockers, solutions  
-• Mike (QA): 1m 20s - Testing status, bug reports
-
-⚡ Action Items:
-• John: Update client on Friday deployment - Due: Today
-• Sarah: Complete API documentation - Due: Thursday
-• Mike: Final testing round before release - Due: Thursday
-
-🔥 Decisions Made:
-• Go-live approved for Friday 2 PM
-• Hotfix process established for post-deployment
-• Weekly retrospective moved to Mondays
-
-💬 AI Chat: "What were the main technical challenges discussed?"
-🤖 "The main challenges were database migration timing and API endpoint testing. Sarah resolved the connection pooling issue, and Mike confirmed all endpoints pass validation tests."
-
-🌍 Language: English (Auto-detected) | 📊 Export: [TXT] [PDF] [DOCX] [JSON]
-```
-
-## 🛠️ **Installation**
-
-### **System Requirements**
-- **Python 3.8+** (Backend processing)
-- **4GB RAM minimum** (8GB recommended)
-- **Modern web browser** (Chrome, Firefox, Safari, Edge)
-- **Optional:** GPU for faster processing
-
-### **Detailed Setup**
-
-<details>
-<summary><b>🐧 Linux/macOS Setup</b></summary>
-
+**2️⃣ Backend Setup**
 ```bash
-# Install Python dependencies
 cd backend
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
 pip install -r requirements.txt
-
-# Download Whisper models (first run)
-python -c "import whisper; whisper.load_model('tiny')"
 
 # Start backend server
-python verba_database_integration.py server
-
-# In new terminal - start frontend
-cd ../
-python -m http.server 8080
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
-</details>
+
+**3️⃣ Frontend Setup**
+```bash
+cd verba-frontend-ts
+npm install
+
+# Start development server
+npm run dev
+```
+
+**4️⃣ Launch Application**
+```bash
+# 🌐 Frontend: http://localhost:5173
+# 📋 API Docs: http://localhost:8000/docs
+# ✅ Health Check: http://localhost:8000/health
+```
+
+### 🎯 First Steps
+
+<table>
+<tr>
+<th>🎤 Microphone Mode</th>
+<th>📁 File Upload Mode</th>
+</tr>
+<tr>
+<td>
+<ol>
+<li>Click <strong>"🎤 Microphone"</strong> tab</li>
+<li>Allow browser permissions</li>
+<li>Hit <strong>"Start Recording"</strong></li>
+<li>Speak clearly for 5-30 seconds</li>
+<li>Click <strong>"Stop Recording"</strong></li>
+<li>Watch AI transcription magic! ✨</li>
+</ol>
+</td>
+<td>
+<ol>
+<li>Switch to <strong>"📁 Upload File"</strong></li>
+<li>Select audio (MP3/WAV/M4A)</li>
+<li>Monitor processing progress</li>
+<li>Review content type detection</li>
+<li>Check transcription accuracy</li>
+<li>View enhanced metadata 📊</li>
+</ol>
+</td>
+</tr>
+</table>
+
+---
+
+## 🏗️ Architecture
+
+### 🛠️ Technology Stack
+
+```mermaid
+graph TB
+    A[🎤 WebRTC Audio] --> B[React + TypeScript]
+    B --> C[Vite Build System]
+    C --> D[FastAPI Backend]
+    D --> E[OpenAI Whisper]
+    E --> F[SQLite Database]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#f1f8e9
+```
+
+### 📁 Project Structure
+
+```
+verba-audio-transcription/
+├── 🎯 backend/
+│   ├── main.py                    # 🚀 Enhanced FastAPI server
+│   ├── requirements.txt           # 📦 Python dependencies
+│   └── verba_app.db              # 🗄️ SQLite database
+│
+├── 💻 verba-frontend-ts/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── MicrophoneRecorder.tsx      # 🎤 Real-time recording
+│   │   │   ├── AudioUploader.tsx           # 📁 File upload
+│   │   │   ├── TranscriptionDisplay.tsx    # 📝 Results display
+│   │   │   └── TranscriptionHistory.tsx    # 📚 History + metadata
+│   │   │
+│   │   ├── services/api.ts                 # 🔌 API integration
+│   │   ├── types/api.ts                    # 📝 TypeScript interfaces
+│   │   └── App.tsx                         # 🎯 Main application
+│   │
+│   ├── package.json
+│   └── vite.config.ts
+│
+└── 📖 docs/
+    └── API_REFERENCE.md
+```
+
+---
+
+## 🔧 API Reference
+
+### 🏥 Health Check
+```http
+GET /health
+```
+**Response:**
+```json
+{
+  "status": "healthy",
+  "model": "loaded", 
+  "model_size": "base",
+  "enhanced_features": true,
+  "librosa_available": true
+}
+```
+
+### 🎵 Transcribe Audio
+```http
+POST /transcribe
+Content-Type: multipart/form-data
+
+audio: <audio_file>
+```
+**Features:**
+- ✅ Smart content detection (Music vs Speech)
+- ✅ Context-aware processing for rap/hip-hop
+- ✅ Enhanced metadata extraction
+- ✅ Processing time tracking
+
+### 📚 Get Transcription History  
+```http
+GET /transcriptions?session_id=default
+```
+**Returns:** Array with enhanced metadata including content type, processing metrics, and model version.
+
+---
+
+## 🐛 Troubleshooting
 
 <details>
-<summary><b>🪟 Windows Setup</b></summary>
+<summary><strong>🚨 Common Issues & Solutions</strong></summary>
 
-```cmd
-# Install Python dependencies
+### Issue: 422 Unprocessable Content Error
+**Root Cause:** Missing `session_id` parameter in API calls
+
+**✅ Solution:**
+```typescript
+// Update services/api.ts
+const response = await fetch(`${API_BASE_URL}/transcriptions?session_id=default`);
+```
+
+### Issue: Microphone Not Working
+**Possible Causes:** Browser permissions, HTTPS requirement
+
+**✅ Solutions:**
+- Allow microphone access in browser settings
+- Use HTTPS in production (HTTP works on localhost)
+- Check browser compatibility: Chrome 53+, Firefox 36+, Safari 11+
+
+### Issue: Vite Build Errors
+**Common TypeScript/React Issues:**
+
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Force Vite rebuild
+npm run dev -- --force
+
+# Update TypeScript
+npm install typescript@latest
+```
+
+### Issue: Python Dependencies 
+**Whisper Installation Problems:**
+
+```bash
+# For Apple Silicon Macs
+pip install torch torchaudio
+
+# For CUDA support  
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Alternative Whisper install
+pip install openai-whisper --upgrade
+```
+
+</details>
+
+---
+
+## 📊 Performance & Specifications
+
+### 🎯 Model Performance
+- **Processing Speed:** ~2-3x real-time
+- **Model Size:** Whisper Base (~140MB, 39M parameters)  
+- **Accuracy:** Significant improvement over tiny model
+- **Memory Usage:** ~1GB RAM recommended
+- **Languages:** 90+ supported natively
+
+### 💻 System Requirements
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **RAM** | 4GB | 8GB |
+| **Storage** | 2GB free | 5GB free |
+| **OS** | Windows 10, macOS 10.15, Ubuntu 18.04 | Latest versions |
+| **Browser** | Chrome 53+, Firefox 36+, Safari 11+ | Latest Chrome |
+
+### ⚡ Optimization Tips
+- Use **base model** for best accuracy/speed balance
+- Enable **voice activity detection** for long recordings
+- Consider **chunking audio** files over 10 minutes
+- Monitor **memory usage** during batch processing
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Here's how to get involved:
+
+### 🎯 Development Setup
+```bash
+# Backend development mode
 cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+uvicorn main:app --reload
 
-# Download Whisper models
-python -c "import whisper; whisper.load_model('tiny')"
-
-# Start backend server
-python verba_database_integration.py server
-
-# In new terminal - start frontend
-cd ../
-python -m http.server 8080
-```
-</details>
-
-<details>
-<summary><b>🐳 Docker Setup</b></summary>
-
-```bash
-# Coming soon - Docker support in development
-# Follow our GitHub for updates!
-```
-</details>
-
-## ⚙️ **Configuration**
-
-### **Audio Settings**
-```python
-# backend/config.py
-WHISPER_MODEL = "tiny"        # tiny, base, small, medium, large
-SAMPLE_RATE = 16000          # Audio sample rate
-VAD_SENSITIVITY = 0.5        # Voice detection sensitivity (0-1)
-NOISE_REDUCTION = True       # Enable RNNoise
+# Frontend development mode  
+cd verba-frontend-ts
+npm run dev -- --host
 ```
 
-### **UI Customization**
-```javascript
-// Frontend themes and settings
-THEME_MODE = "auto"          // auto, dark, light
-NAVY_THEME = true           // Enable navy color scheme  
-ANIMATIONS = true           // Smooth UI transitions
-AUTO_SAVE = true            // Auto-save transcripts
-```
+### 📋 Contribution Process
+1. **🍴 Fork** the repository
+2. **🌿 Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **💾 Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **🚀 Push** to branch (`git push origin feature/amazing-feature`)  
+5. **🎯 Open** a Pull Request
 
-## 🎯 **Use Cases**
+### 🎨 Areas We Need Help
+- [ ] **Real-time streaming** transcription
+- [ ] **Language detection** automation
+- [ ] **Speaker diarization** features
+- [ ] **Export functionality** (PDF, DOCX)
+- [ ] **Mobile app** development
+- [ ] **Documentation** improvements
 
-### **👨‍🎓 Students & Academics**
-- **Multi-Language Lectures** - Support for international courses and professors
-- **Technical Vocabulary** - Add domain-specific terms for better accuracy
-- **Study Templates** - Optimized for lectures, seminars, and study groups
-- **Research Interviews** - Speaker identification for qualitative research
-- **Language Learning** - Practice with real-time feedback and analysis
-- **Collaboration** - Share transcripts and summaries with classmates
+---
 
-### **💼 Business Professionals** 
-- **Client Meetings** - Professional documentation with export options
-- **Team Standups** - Template-driven action items and decision tracking
-- **Training Sessions** - Knowledge capture with speaker analytics
-- **International Calls** - Multi-language support for global teams
-- **Secure Environments** - Complete offline operation for sensitive content
-- **Performance Reviews** - Structured templates for HR processes
+## 📄 License & Credits
 
-### **🏢 Organizations & Teams**
-- **Board Meetings** - Governance documentation with speaker identification
-- **Customer Interviews** - User research with intelligent analysis
-- **Internal Communications** - Meeting minutes with automated summaries
-- **Remote Collaboration** - Async meeting reviews and follow-ups
-- **Training & Development** - Knowledge transfer with searchable transcripts
-- **Compliance & Audit** - Accurate records with timestamp verification
+### 📋 License
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for full details.
 
-## 📊 **Performance Benchmarks**
+### 🙏 Acknowledgments
+- **[OpenAI Whisper](https://github.com/openai/whisper)** - Robust speech recognition model
+- **[FastAPI](https://fastapi.tiangolo.com/)** - Modern Python web framework  
+- **[Vite](https://vitejs.dev/)** - Next generation frontend tooling
+- **[React](https://reactjs.org/)** - User interface library
+- **Original Verba Project** - Foundation and inspiration
 
-| Metric | Verba Enhanced | Industry Average |
-|--------|----------------|------------------|
-| **Model Loading** | 1.2-1.5s | 30-60s |
-| **Memory Usage** | 1.5GB | 3-4GB |
-| **Transcription Speed** | 1.5x realtime | 1x realtime |
-| **Accuracy (English)** | 95%+ | 90-95% |
-| **Languages Supported** | 10 languages | 2-5 languages |
-| **Speaker Identification** | ✅ Included | 💰 Premium |
-| **Custom Vocabulary** | ✅ Unlimited | ❌ Limited |
-| **Export Formats** | 4 formats | 1-2 formats |
-| **Template System** | ✅ 4 templates | ❌ None |
-| **Startup Time** | <3s | 10-30s |
-| **Bundle Size** | 15KB | 2MB+ |
-| **Offline Capability** | ✅ Complete | ❌ Cloud Only |
+### 👨‍💻 Developed By
+**Mark Munene** - *Full-stack Developer & AI Enthusiast*
 
-*Benchmarks measured on 8GB RAM system with Intel i5 processor*
+---
 
-## 🗺️ **Roadmap**
+## 📞 Support & Community
 
-### **🚀 Version 1.0 Enhanced (Current - COMPLETE)**
-- [x] **Real-time transcription** with OpenAI Whisper (multiple models)
-- [x] **Multi-language support** (10 languages with auto-detection)
-- [x] **Speaker identification** and diarization with custom naming
-- [x] **Meeting templates** (Standup, Client, Lecture, Interview presets)
-- [x] **Custom vocabulary** training for technical terms and names
-- [x] **Advanced export options** (TXT, PDF, DOCX, JSON formats)
-- [x] **AI-powered analysis** with template-specific intelligence
-- [x] **Modern TypeScript frontend** with navy-themed professional design
-- [x] **SQLite database integration** with session management
-- [x] **Privacy-first architecture** with complete offline operation
+<div align="center">
 
-### **📈 Version 1.1 (Next 2-4 Weeks)**
-- [ ] **Real-time translation** between supported languages
-- [ ] **Video meeting integration** (Zoom, Teams, Google Meet plugins)
-- [ ] **Advanced analytics dashboard** with participation metrics
-- [ ] **Team collaboration features** with shared workspaces
-- [ ] **Custom AI model fine-tuning** for specialized domains
+### 💬 Get Help & Connect
 
-### **🌟 Version 1.2 (6-8 Weeks)**  
-- [ ] **Cloud backup integration** (optional with encryption)
-- [ ] **Cross-device synchronization** with secure key management
-- [ ] **Mobile app companion** for iOS and Android
-- [ ] **Enterprise team management** with role-based access
-- [ ] **API for third-party integrations** with webhooks
+[![GitHub Issues](https://img.shields.io/badge/Issues-GitHub-red?style=for-the-badge&logo=github)](https://github.com/marc-254/Verba.devops/issues)
+[![Discussions](https://img.shields.io/badge/Discussions-GitHub-blue?style=for-the-badge&logo=github)](https://github.com/marc-254/Verba.devops/discussions)  
+[![Documentation](https://img.shields.io/badge/Docs-Available-green?style=for-the-badge&logo=gitbook)](./docs/)
 
-### **🚀 Version 2.0 (Future Vision)**
-- [ ] **Live meeting integration** with calendar sync
-- [ ] **Advanced security features** with enterprise SSO
-- [ ] **Custom deployment options** (on-premise, hybrid cloud)
-- [ ] **White-label solutions** for enterprise customers
-- [ ] **AI meeting insights** with trend analysis and recommendations
+**Found a bug?** Open an issue • **Need help?** Start a discussion • **Want to contribute?** Check our guidelines
 
-## 🏆 **Comparison**
+---
 
-| Feature | Verba Enhanced | Otter.ai | Tactiq | Krisp |
-|---------|----------------|----------|---------|--------|
-| **💰 Cost** | Free Forever | $16.99/mo | $12/mo | $60/mo |
-| **🔒 Privacy** | 100% Offline | Cloud Only | Cloud Only | Cloud Only |
-| **⚡ Performance** | 1.5x Realtime | 1x Realtime | 1x Realtime | 1x Realtime |
-| **💻 Requirements** | 4GB RAM | High-end | High-end | High-end |
-| **🌍 Languages** | 10 Languages | 5 Languages | 3 Languages | 2 Languages |
-| **👥 Speakers** | Unlimited ID | 2-10 Premium | 6 Premium | No ID |
-| **📋 Templates** | 4 Built-in | None | Limited | None |
-| **📊 Export Formats** | TXT/PDF/DOCX/JSON | TXT Only | PDF Premium | None |
-| **🎯 Custom Vocab** | Unlimited | 200 Premium | None | None |
-| **🛠️ Customizable** | Full Control | Limited | Very Limited | No Control |
-| **📱 Mobile** | Responsive Web | Native App | Web App | Native App |
-| **🤖 AI Features** | Full Suite | Full Suite | Basic | None |
-| **📈 Analytics** | Advanced | Premium Only | Premium Only | Basic |
-| **🔧 API Access** | Coming Soon | Premium | None | Premium |
+### 🌟 Show Your Support
 
-## 🤝 **Contributing**
+**If Verba helps you, please consider:**
 
-We welcome contributions from developers, designers, and users! Here's how to get involved:
+⭐ **Star** this repository • 🐛 **Report** bugs • 💡 **Suggest** features • 🤝 **Contribute** code
 
-### **🐛 Report Issues**
-- Found a bug? [Open an issue](https://github.com/marc-254/Verba.devops/issues)
-- Have a feature request? We'd love to hear it!
-- Need help? Check our [discussions](https://github.com/marc-254/Verba.devops/discussions)
+**Built with ❤️ for seamless audio transcription**
 
-### **💻 Code Contributions**
-
-```bash
-# 1. Fork the repository
-# 2. Create your feature branch
-git checkout -b feature/amazing-feature
-
-# 3. Make your changes
-# 4. Test thoroughly
-python test_enhanced_transcription.py
-
-# 5. Commit your changes  
-git commit -m "Add amazing feature"
-
-# 6. Push and create a Pull Request
-git push origin feature/amazing-feature
-```
-
-### **📖 Documentation**
-- Improve our guides and tutorials
-- Translate documentation to other languages
-- Create video tutorials and demos
-
-### **🧪 Testing**
-- Test on different operating systems
-- Validate low-resource device compatibility  
-- Report performance benchmarks
-
-## 📚 **Documentation**
-
-- **📖 [User Guide](docs/user-guide.md)** - Complete usage instructions
-- **🔧 [Developer Docs](docs/developer.md)** - Technical implementation details  
-- **🚀 [Deployment Guide](docs/deployment.md)** - Production setup instructions
-- **❓ [FAQ](docs/faq.md)** - Frequently asked questions
-- **🎯 [API Reference](docs/api.md)** - Backend API documentation
-
-## 💖 **Support Verba**
-
-Verba is free forever, but development takes time and resources. Support us:
-
-- **⭐ Star this repository** - Help others discover Verba
-- **🐦 Share on social media** - Spread the word about free transcription  
-- **☕ [Buy us a coffee](https://buymeacoffee.com/verba)** - Voluntary donations welcome
-- **🤝 Contribute code** - Your skills make Verba better
-- **📢 Tell your friends** - Word of mouth is our best marketing
-
-## 📜 **License**
-
-Verba is open source software released under the [MIT License](LICENSE).
-
-```
-MIT License - Free to use, modify, and distribute
-Copyright (c) 2025 Mark Munene & Verba Contributors
-```
-
-## 🙏 **Acknowledgments**
-
-Verba stands on the shoulders of giants:
-
-- **[OpenAI Whisper](https://github.com/openai/whisper)** - World-class transcription models
-- **[Hugging Face](https://huggingface.co/)** - Transformers and AI democratization  
-- **[RNNoise](https://github.com/xiph/rnnoise)** - Real-time noise reduction
-- **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful, accessible UI components
-- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first styling
-- **Our amazing community** - Bug reports, feature requests, and contributions
-
-**Made with ❤️ by [Mark Munene](https://github.com/marc-254) and the Verba community**
-
-*Democratizing AI transcription technology, one meeting at a time*
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/marc-254/Verba.devops)
-[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+*Last updated: August 28, 2025*
 
 </div>
