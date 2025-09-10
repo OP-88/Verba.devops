@@ -1,33 +1,43 @@
-#!/usr/bin/env python3
 """
-Verba - Minimal Enhanced Version (Quick Fix) - SYNTAX CORRECTED
-This version keeps your existing functionality but adds essential improvements
+Verba AI-Powered Audio Transcription System
+FastAPI Backend Server
+
+Main application entry point with health monitoring, 
+audio transcription, and history management.
 """
 
 import os
 import sys
-import json
-import sqlite3
-import asyncio
-import logging
-import tempfile
-import threading
 import time
-import uuid
-from contextlib import contextmanager
-from datetime import datetime, timedelta
+import logging
+import asyncio
 from pathlib import Path
-from queue import Queue
-from typing import Dict, List, Optional, Tuple, Any
+from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Optional, List
 
-import numpy as np
-import whisper
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+import uvicorn
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import webrtcvad
-import uvicorn
+
+# Add backend directory to Python path
+backend_dir = Path(__file__).parent
+sys.path.insert(0, str(backend_dir))
+
+from config.settings import Settings
+from models.transcription_models import TranscriptionCreate, TranscriptionResponse, HealthResponse
+from services.whisper_service import WhisperService
+from services.database_service import DatabaseService
+from utils.audio_processing import AudioProcessor
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Optional enhanced imports (graceful fallback)
 try:
