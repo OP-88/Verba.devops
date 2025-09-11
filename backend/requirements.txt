@@ -1,13 +1,33 @@
+# Core FastAPI
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
 python-multipart==0.0.12
 pydantic==2.9.0
-whisper-ctranslate2
-torch
-numpy
-librosa
-soundfile
-python-dotenv
+
+# AI/ML Stack for Transcription & Diarization
+openai-whisper==20240930
+torch==2.5.0
+torchaudio==2.5.0
+transformers==4.45.0
+numpy==2.0.0
+
+# Speaker Diarization
+pyannote.audio==3.1.1
+
+# Audio Processing & Noise Reduction
+sounddevice==0.5.1
+soundfile==0.12.1
+librosa==0.10.2
+scipy==1.14.0
+
+# Voice Activity Detection
+webrtcvad==2.0.10
+
+# Utilities
+python-dotenv==1.0.1
+loguru==0.7.2
+psutil==6.0.0
+requests==2.31.0
+
+# Database
 sqlite3
-flask-cors
-requests
