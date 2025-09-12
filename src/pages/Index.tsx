@@ -11,8 +11,8 @@ import FloatingAIChat from '@/components/FloatingAIChat';
 import VerbaTestSuite from '@/components/VerbaTestSuite';
 
 const Index = () => {
-  const [showSplash, setShowSplash] = useState(false); // Skip splash for immediate preview
-  const [currentPage, setCurrentPage] = useState('test-suite'); // Start with test suite
+  const [showSplash, setShowSplash] = useState(true);
+  const [currentPage, setCurrentPage] = useState('test-suite'); // Start with test suite for preview
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -45,8 +45,27 @@ const Index = () => {
 
   return (
     <>
-      {/* Force display test suite for immediate preview */}
-      <VerbaTestSuite />
+      {/* Conditionally show FloatingAIChat only in StudySpot, DonateButton everywhere else */}
+      {currentPage === 'studyspot' ? <FloatingAIChat /> : <DonateButton />}
+
+      {(() => {
+        switch (currentPage) {
+          case 'live-meeting':
+            return <LiveMeeting onBack={handleBack} isOnline={isOnline} />;
+          case 'import-audio':
+            return <ImportAudio onBack={handleBack} isOnline={isOnline} />;
+          case 'transcripts':
+            return <SavedTranscripts onBack={handleBack} />;
+          case 'reminders':
+            return <RemindersNotes onBack={handleBack} />;
+          case 'studyspot':
+            return <StudySpot onBack={handleBack} />;
+          case 'test-suite':
+            return <VerbaTestSuite />;
+          default:
+            return <Dashboard onNavigate={handleNavigate} isOnline={isOnline} />;
+        }
+      })()}
     </>
   );
 };
