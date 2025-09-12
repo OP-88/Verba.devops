@@ -135,6 +135,16 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatSRTTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const millisecs = Math.floor((secs % 1) * 1000);
+    const wholeSeconds = Math.floor(secs);
+    
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${wholeSeconds.toString().padStart(2, '0')},${millisecs.toString().padStart(3, '0')}`;
+  };
+
   if (isLoading) {
     return (
       <Card className={`p-4 sm:p-6 ${className}`}>
