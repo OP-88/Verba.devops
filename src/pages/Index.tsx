@@ -8,10 +8,11 @@ import RemindersNotes from '@/components/RemindersNotes';
 import StudySpot from '@/components/StudySpot';
 import DonateButton from '@/components/DonateButton';
 import FloatingAIChat from '@/components/FloatingAIChat';
+import VerbaTestSuite from '@/components/VerbaTestSuite';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('test-suite'); // Start with test suite for preview
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -59,6 +60,8 @@ const Index = () => {
             return <RemindersNotes onBack={handleBack} />;
           case 'studyspot':
             return <StudySpot onBack={handleBack} />;
+          case 'test-suite':
+            return <VerbaTestSuite />;
           default:
             return <Dashboard onNavigate={handleNavigate} isOnline={isOnline} />;
         }
