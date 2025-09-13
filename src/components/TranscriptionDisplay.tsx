@@ -180,10 +180,32 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({
             </div>
           </div>
         ) : (
-          <div className="prose max-w-none">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {transcription.text}
-            </p>
+          <div className="prose max-w-none" aria-live="polite">
+            {transcription.text ? (
+              <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                {/* Parse speaker labels if present */}
+                {transcription.text.split('\n').map((line, index) => {
+                  const speakerMatch = line.match(/^Speaker (\w+): (.+)$/);
+                  if (speakerMatch) {
+                    return (
+                      <div key={index} className="mb-3 p-3 bg-muted/50 rounded-lg">
+                        <Badge variant="outline" className="mb-2">
+                          <Speaker className="w-3 h-3 mr-1" />
+                          Speaker {speakerMatch[1]}
+                        </Badge>
+                        <p>{speakerMatch[2]}</p>
+                      </div>
+                    );
+                  }
+                  return line.trim() ? <p key={index} className="mb-2">{line}</p> : null;
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-20">
+                <div className="animate-spin h-6 w-6 border-t-2 border-blue-500 rounded-full"></div>
+                <span className="ml-2 text-muted-foreground">Processing transcription...</span>
+              </div>
+            )}
           </div>
         )}
       </Card>
