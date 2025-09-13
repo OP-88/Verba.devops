@@ -26,6 +26,17 @@ from pydantic import BaseModel
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
+# Enhanced imports for diarization and noise reduction
+try:
+    from pyannote.audio import Pipeline
+    DIARIZATION_AVAILABLE = True
+except ImportError:
+    DIARIZATION_AVAILABLE = False
+    print("📝 Note: pyannote.audio not available, speaker diarization disabled")
+
+from services.noise_service import rnnoise_service
+from services.summary_service import summarization_service
+from services.diarization_service import SpeakerDiarizationService
 from config.settings import Settings
 from models.transcription_models import TranscriptionCreate, TranscriptionResponse, HealthResponse
 from services.whisper_service import WhisperService
@@ -207,26 +218,16 @@ def detect_content_type(audio_path: str) -> str:
     return "speech"
 
 def get_smart_prompt(content_type: str, filename: str = "") -> str:
-    """Get context-aware prompt for Whisper"""
+    """Get context-aware prompt for Whisper - focused on meetings/lectures"""
     filename_lower = filename.lower()
     
-    if content_type == "music":
-        # Music-specific prompts
-        if any(genre in filename_lower for genre in ['rap', 'hip-hop', 'drill']):
-            return "Rap music, hip-hop lyrics, clear pronunciation, slang terms"
-        elif any(genre in filename_lower for genre in ['pop', 'rock', 'indie']):
-            return "Song lyrics, musical performance, clear vocal pronunciation"
-        else:
-            return "Musical content, song lyrics, clear vocal delivery"
-    
-    else:  # speech
-        # Speech-specific prompts  
-        if any(context in filename_lower for context in ['meeting', 'call']):
-            return "Business meeting, professional discussion, clear speech"
-        elif any(context in filename_lower for context in ['lecture', 'class']):
-            return "Educational content, academic presentation, technical terms"
-        else:
-            return "Clear speech, natural conversation, accurate transcription"
+    # Always prioritize speech/meeting content (no music focus)
+    if any(context in filename_lower for context in ['meeting', 'call', 'conference']):
+        return "Transcribe spoken content from meeting or business call with multiple speakers. Include clear speech and professional discussion."
+    elif any(context in filename_lower for context in ['lecture', 'class', 'presentation']):
+        return "Transcribe spoken content from meeting or lecture with educational content and technical terms."
+    else:
+        return "Transcribe spoken content from meeting or lecture. Focus on clear speech and natural conversation."
 
 # ==================== IMPROVED TRANSCRIPTION SERVICE ====================
 
