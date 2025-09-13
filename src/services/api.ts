@@ -1,37 +1,43 @@
-// ~/verba-frontend-ts/src/services/api.ts
-// Fixed version addressing both 422 errors
-
-import { TranscriptionResponse, TranscriptionHistoryItem } from '../types/api';
+import { TranscriptionResult } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
-class ApiService {
-  // Fixed: Add session_id parameter to transcriptions
-  async getTranscriptions(sessionId: string = 'default'): Promise<TranscriptionHistoryItem[]> {
+export class ApiService {
+  async getHistory(): Promise<TranscriptionResult[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/transcriptions?session_id=${sessionId}`);
+      const response = await fetch(`${API_BASE_URL}/history`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return await response.json();
     } catch (error) {
-      console.error('Error fetching transcriptions:', error);
+      console.error('Failed to fetch transcriptions:', error);
       throw error;
     }
   }
 
-  // Fixed: Proper FormData handling without manual Content-Type
-  async transcribeAudio(audioFile: File): Promise<TranscriptionResponse> {
+  async deleteTranscription(id: number): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/history/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete transcription:', error);
+      throw error;
+    }
+  }
+
+  async transcribeAudio(audioFile: File): Promise<TranscriptionResult> {
     try {
       const formData = new FormData();
-      formData.append('audio', audioFile);
+      formData.append('file', audioFile);
       
-      // CRITICAL: Do NOT set Content-Type header manually
-      // Browser will set it automatically with boundary for multipart/form-data
       const response = await fetch(`${API_BASE_URL}/transcribe`, {
         method: 'POST',
         body: formData
-        // No headers! Let browser handle Content-Type
       });
 
       if (!response.ok) {
