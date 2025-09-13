@@ -377,10 +377,21 @@ const VerbaTestSuite: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <TranscriptionDisplay
-                  transcription={sampleSegments.map(s => `${s.speaker}: ${s.text}`).join('\n\n')}
-                  segments={sampleSegments}
-                  summary="This meeting focused on quarterly results review, with emphasis on growth metrics and regional performance analysis. Key discussion points included North American division performance showing 23% growth."
-                  metadata={sampleMetadata}
+                  transcription={{
+                    id: 1,
+                    text: sampleSegments.map(s => `${s.speaker}: ${s.text}`).join('\n\n'),
+                    confidence: 0.95,
+                    language: 'en',
+                    duration: 180,
+                    created_at: new Date().toISOString(),
+                    file_name: 'sample_meeting.wav',
+                    file_size: 1024000,
+                    segments: sampleSegments.map((s, i) => ({
+                      start: i * 30,
+                      end: (i + 1) * 30,
+                      text: s.text
+                    }))
+                  }}
                 />
               </CardContent>
             </Card>
