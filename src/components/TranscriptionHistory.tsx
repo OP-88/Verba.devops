@@ -5,16 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Trash2, Calendar, Clock, FileText } from 'lucide-react';
-import { TranscriptionResult } from '@/types';
-import { apiService } from '@/services/api';
+import { apiService, Transcription } from '@/services/api';
 import { toast } from 'sonner';
 
 interface TranscriptionHistoryProps {
-  onSelectTranscription: (transcription: TranscriptionResult) => void;
+  onSelectTranscription: (transcription: Transcription) => void;
 }
 
 export default function TranscriptionHistory({ onSelectTranscription }: TranscriptionHistoryProps) {
-  const [transcriptions, setTranscriptions] = useState<TranscriptionResult[]>([]);
+  const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleting, setDeleting] = useState<number | null>(null);

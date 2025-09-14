@@ -10,7 +10,7 @@ import { saveAs } from 'file-saver';
 import { TranscriptionResult } from '@/types';
 
 interface TranscriptionDisplayProps {
-  transcription: TranscriptionResult;
+  transcription: Transcription;
 }
 
 const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({

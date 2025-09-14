@@ -6,24 +6,20 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "Verba",
-    "version": "1.0.0"
+    "productName": "Verba AI Transcription",
+    "version": "2.0.0"
   },
   "tauri": {
     "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
+      "all": true,
       "fs": {
         "all": true,
-        "scope": ["$AUDIO", "$APPDATA", "$DOWNLOAD", "$DOCUMENT"]
+        "scope": ["$AUDIO", "$APPDATA", "$DOWNLOAD", "$DOCUMENT", "$RESOURCE"]
       },
       "http": {
         "all": true,
         "request": true,
-        "scope": ["http://localhost:8000/*", "https://api.*"]
+        "scope": ["http://localhost:8000/*", "https://openrouter.ai/*"]
       },
       "dialog": {
         "all": true,
@@ -32,6 +28,10 @@
         "message": true,
         "open": true,
         "save": true
+      },
+      "shell": {
+        "all": false,
+        "open": true
       }
     },
     "bundle": {
@@ -48,11 +48,11 @@
       "resources": ["../backend/**/*"],
       "externalBin": ["python3", "pip3"],
       "category": "Productivity",
-      "shortDescription": "AI-Powered Audio Transcription",
-      "longDescription": "Offline-first audio transcription with speaker diarization and AI summarization"
+      "shortDescription": "AI-Powered Audio Transcription with Speaker Diarization",
+      "longDescription": "Offline-first audio transcription with speaker diarization, AI summarization, and intelligent chatbot"
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self' http://localhost:8000 https://openrouter.ai; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'"
     },
     "updater": {
       "active": false
@@ -62,11 +62,16 @@
         "fullscreen": false,
         "resizable": true,
         "title": "Verba - AI Audio Transcription",
-        "width": 1200,
-        "height": 800,
+        "width": 1400,
+        "height": 900,
         "minWidth": 800,
         "minHeight": 600
       }
-    ]
+    ],
+    "macOSPrivateApi": true,
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    }
   }
 }
