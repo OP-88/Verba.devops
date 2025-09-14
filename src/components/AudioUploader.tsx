@@ -12,6 +12,7 @@ const api = apiService;
 interface AudioUploaderProps {
   onTranscriptionComplete?: (result: any) => void;
   isOnline?: boolean;
+  mode?: 'offline' | 'hybrid';
 }
 
 interface UploadedFile {

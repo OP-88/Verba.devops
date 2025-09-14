@@ -1,9 +1,9 @@
 """
 Verba AI-Powered Audio Transcription System
-FastAPI Backend Server
+FastAPI Backend Server with OpenRouter Integration
 
 Main application entry point with health monitoring, 
-audio transcription, and history management.
+audio transcription, speaker diarization, and AI chatbot.
 """
 
 import os
@@ -11,16 +11,26 @@ import sys
 import time
 import logging
 import asyncio
+import tempfile
+import sqlite3
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+import json
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import httpx
+from dotenv import load_dotenv
+import whisper
+import librosa
+
+# Load environment variables
+load_dotenv()
 
 # Add backend directory to Python path
 backend_dir = Path(__file__).parent
@@ -34,14 +44,19 @@ except ImportError:
     DIARIZATION_AVAILABLE = False
     print("📝 Note: pyannote.audio not available, speaker diarization disabled")
 
-from services.noise_service import rnnoise_service
-from services.summary_service import summarization_service
-from services.diarization_service import SpeakerDiarizationService
-from config.settings import Settings
-from models.transcription_models import TranscriptionCreate, TranscriptionResponse, HealthResponse
-from services.whisper_service import WhisperService
-from services.database_service import DatabaseService
-from utils.audio_processing import AudioProcessor
+try:
+    from transformers import pipeline
+    SUMMARIZATION_AVAILABLE = True
+except ImportError:
+    SUMMARIZATION_AVAILABLE = False
+    print("📝 Note: transformers not available, summarization disabled")
+
+# Global variables
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+MODE = os.getenv("MODE", "offline")
+model = None
+diarization_pipeline = None
+summarizer = None
 
 # Configure logging
 logging.basicConfig(
@@ -382,95 +397,154 @@ class ImprovedTranscriptionService:
                 "processing_time": time.time() - start_time
             }
 
+# Import VAD utilities
+from vad_utils import preprocess_audio
+
 # ==================== FASTAPI APPLICATION ====================
 
-# Initialize services
-db_manager = EnhancedDatabaseManager("verba_app.db")
-transcription_service = ImprovedTranscriptionService("base")  # Upgraded model
+app = FastAPI(title="Verba AI Transcription API", version="2.0.0")
 
-app = FastAPI(title="Verba Improved API", version="1.0.0")
+@app.on_event("startup")
+async def startup_event():
+    """Initialize models and services on startup"""
+    global model, diarization_pipeline, summarizer
+    
+    # Load Whisper model
+    try:
+        model = whisper.load_model("base")
+        print("✅ Whisper model loaded successfully")
+    except Exception as e:
+        print(f"❌ Failed to load Whisper model: {e}")
+    
+    # Load diarization pipeline
+    if DIARIZATION_AVAILABLE:
+        try:
+            diarization_pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization-3.1')
+            print("✅ Speaker diarization pipeline loaded successfully")
+        except Exception as e:
+            print(f"❌ Failed to load diarization pipeline: {e}")
+    
+    # Load summarization model
+    if SUMMARIZATION_AVAILABLE:
+        try:
+            summarizer = pipeline('summarization', model='t5-small')
+            print("✅ Summarization model loaded successfully")
+        except Exception as e:
+            print(f"❌ Failed to load summarization model: {e}")
+    
+    # Initialize database
+    conn = sqlite3.connect('verba_app.db')
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS transcriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT NOT NULL,
+            summary TEXT,
+            metadata TEXT,
+            session_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+    print("✅ Database initialized")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "tauri://localhost"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Pydantic models
-class TranscriptionResponse(BaseModel):
-    transcription: str
-    content_type: str
-    processing_time: float
-    audio_duration: float
-    segments: List[Dict]
-    model_used: str
+class TranscriptionWithDiarizationResponse(BaseModel):
+    text: str
+    summary: str = ""
+    chatbot: str = ""
+    metadata: Dict[str, Any]
+    processing_time: float = 0.0
 
-class ReminderCreate(BaseModel):
-    title: str
-    description: str = ""
-    due_date: Optional[str] = None
+class ChatRequest(BaseModel):
+    query: str
 
-class ReminderUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    due_date: Optional[str] = None
-    status: Optional[str] = None
+class ChatResponse(BaseModel):
+    response: str
+
+# ==================== API ENDPOINTS ====================
 
 # ==================== API ENDPOINTS ====================
 
 @app.get("/")
 async def root():
-    return {"message": "Verba Improved API", "version": "1.0.0", "status": "operational"}
+    return {"message": "Verba AI Transcription API", "version": "2.0.0", "status": "operational"}
 
 @app.get("/health")
 async def health_check():
     """Health check with system status"""
     try:
         # Test database
-        with db_manager.get_connection() as conn:
-            conn.execute("SELECT 1").fetchone()
-        
-        # Test model
-        model_status = "loaded" if transcription_service.model else "not_loaded"
+        conn = sqlite3.connect('verba_app.db')
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
         
         return {
             "status": "healthy",
             "database": "operational",
-            "model": model_status,
-            "model_size": transcription_service.model_size,
-            "enhanced_features": ENHANCED_FEATURES,
-            "librosa_available": LIBROSA_AVAILABLE,
+            "model": "loaded" if model else "not_loaded",
+            "diarization": "available" if DIARIZATION_AVAILABLE else "unavailable",
+            "summarization": "available" if SUMMARIZATION_AVAILABLE else "unavailable",
+            "openrouter_key": "configured" if OPENROUTER_API_KEY else "not_configured",
+            "mode": MODE,
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-@app.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio(
-    audio: UploadFile = File(...),
-    session_id: str = Form(...),
-    meeting_title: str = Form("")
-):
-    """Improved transcription endpoint"""
-    if not session_id:
-        raise HTTPException(status_code=400, detail="Session ID is required")
-        
-    # Save uploaded file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(audio.filename).suffix) as tmp_file:
-        content = await audio.read()
-        tmp_file.write(content)
-        tmp_file.flush()
-        
-        try:
-            # Transcribe with improvements
-            result = transcription_service.transcribe_audio(tmp_file.name, meeting_title)
-            
-            if "error" in result:
-                raise HTTPException(status_code=500, detail=result["error"])
-            
-            # Save to database
+async def query_openrouter(prompt: str) -> str:
+    """Query OpenRouter API for AI responses"""
+    if not OPENROUTER_API_KEY:
+        return "OpenRouter API key not configured"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+                json={
+                    "model": "mistralai/mistral-7b-instruct:free",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 150
+                },
+                timeout=30.0
+            )
+            if response.status_code == 200:
+                return response.json()['choices'][0]['message']['content']
+            else:
+                return f"API Error: {response.status_code}"
+    except Exception as e:
+        return f"Connection error: {str(e)}"
+
+@app.post("/chat")
+async def chat(chat_request: ChatRequest, session_id: str = "default"):
+    """AI chatbot endpoint using OpenRouter"""
+    if MODE != "hybrid":
+        return ChatResponse(response="Chatbot available in hybrid mode only")
+    
+    # Get recent transcripts for context
+    conn = sqlite3.connect('verba_app.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT text FROM transcriptions WHERE session_id = ? ORDER BY created_at DESC LIMIT 3", (session_id,))
+    transcripts = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    
+    context = "\n".join(transcripts[-3:])  # Last 3 transcripts for context
+    prompt = f"Based on these meeting transcripts:\n{context}\n\nUser question: {chat_request.query}\n\nProvide a helpful response:"
+    
+    response = await query_openrouter(prompt)
+    return ChatResponse(response=response)
+
+# Include the transcription endpoint
+exec(open("transcribe_endpoint.py").read())
             with db_manager.get_connection() as conn:
                 cursor = conn.execute("""
                     INSERT INTO transcriptions (

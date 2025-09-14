@@ -2,10 +2,19 @@ import { TranscriptionResult } from '@/types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
+export interface Transcription {
+  id?: number;
+  text: string;
+  summary: string;
+  chatbot?: string;
+  metadata: { speakers: number; mode?: string; duration?: number };
+  created_at?: string;
+}
+
 export class ApiService {
-  async getHistory(): Promise<TranscriptionResult[]> {
+  async getHistory(session_id: string = 'default'): Promise<Transcription[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/history`);
+      const response = await fetch(`${API_BASE_URL}/history?session_id=${session_id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -30,10 +39,12 @@ export class ApiService {
     }
   }
 
-  async transcribeAudio(audioFile: File): Promise<TranscriptionResult> {
+  async transcribeAudio(audioBlob: Blob, mode: string = 'offline'): Promise<Transcription> {
     try {
       const formData = new FormData();
-      formData.append('file', audioFile);
+      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('mode', mode);
+      formData.append('session_id', 'default');
       
       const response = await fetch(`${API_BASE_URL}/transcribe`, {
         method: 'POST',
@@ -49,6 +60,26 @@ export class ApiService {
       return await response.json();
     } catch (error) {
       console.error('Error transcribing audio:', error);
+      throw error;
+    }
+  }
+
+  async chatWithAI(query: string, session_id: string = 'default'): Promise<string> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat?session_id=${session_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return result.response;
+    } catch (error) {
+      console.error('Chat error:', error);
       throw error;
     }
   }

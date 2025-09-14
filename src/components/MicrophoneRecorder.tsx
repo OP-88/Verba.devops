@@ -7,10 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Mic, MicOff, Square, Play, Pause, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiService } from '@/services/api';
 
 interface MicrophoneRecorderProps {
   onTranscriptionComplete?: (result: any) => void;
   isOnline?: boolean;
+  mode?: 'offline' | 'hybrid';
 }
 
 interface TranscriptionSegment {
@@ -23,7 +25,8 @@ interface TranscriptionSegment {
 
 const MicrophoneRecorder: React.FC<MicrophoneRecorderProps> = ({ 
   onTranscriptionComplete, 
-  isOnline = true 
+  isOnline = true,
+  mode = 'offline'
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -172,22 +175,9 @@ const MicrophoneRecorder: React.FC<MicrophoneRecorderProps> = ({
     if (!audioBlob) return;
 
     setIsTranscribing(true);
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'recording.webm');
-    formData.append('enable_diarization', 'true');
-    formData.append('session_id', 'default');
-
+    
     try {
-      const response = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Transcription failed');
-      }
-
-      const result = await response.json();
+      const result = await apiService.transcribeAudio(audioBlob, mode);
       
       // Parse speaker-segmented transcription
       const segments: TranscriptionSegment[] = [];
@@ -201,7 +191,7 @@ const MicrophoneRecorder: React.FC<MicrophoneRecorderProps> = ({
             text: speakerMatch[2],
             start: index * 5, // Approximate timing
             end: (index + 1) * 5,
-            confidence: result.confidence || 0.95
+            confidence: 0.95
           });
         } else if (line.trim()) {
           segments.push({
@@ -209,14 +199,16 @@ const MicrophoneRecorder: React.FC<MicrophoneRecorderProps> = ({
             text: line.trim(),
             start: index * 5,
             end: (index + 1) * 5,
-            confidence: result.confidence || 0.95
+            confidence: 0.95
           });
         }
       });
 
       setTranscriptionResult(segments);
       onTranscriptionComplete?.(result);
-      toast.success('Transcription completed with speaker identification');
+      
+      const modeText = mode === 'hybrid' ? 'with AI insights' : '';
+      toast.success(`Transcription completed with speaker identification ${modeText}`);
     } catch (error) {
       console.error('Transcription error:', error);
       toast.error('Transcription failed. Please try again.');
