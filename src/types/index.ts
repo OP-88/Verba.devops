@@ -9,6 +9,9 @@ export interface TranscriptionResult {
   file_name: string;
   file_size: number;
   segments: TranscriptionSegment[];
+  summary?: string;
+  chatbot?: string;
+  metadata: { speakers: number; mode?: string };
 }
 
 export interface TranscriptionSegment {

@@ -8,6 +8,7 @@ import { Copy, Download, Edit, Save, X, Speaker, Clock, FileText } from 'lucide-
 import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
 import { TranscriptionResult } from '@/types';
+import { Transcription } from '@/services/api';
 
 interface TranscriptionDisplayProps {
   transcription: Transcription;

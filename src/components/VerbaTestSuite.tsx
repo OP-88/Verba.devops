@@ -385,7 +385,7 @@ const VerbaTestSuite: React.FC = () => {
                     duration: 180,
                     created_at: new Date().toISOString(),
                     file_name: 'sample_meeting.wav',
-                    file_size: 1024000,
+                    metadata: { speakers: 2, mode: 'offline' },
                     segments: sampleSegments.map((s, i) => ({
                       start: i * 30,
                       end: (i + 1) * 30,

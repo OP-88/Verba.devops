@@ -5,10 +5,19 @@ const API_BASE_URL = 'http://localhost:8000';
 export interface Transcription {
   id?: number;
   text: string;
-  summary: string;
+  summary?: string;
   chatbot?: string;
-  metadata: { speakers: number; mode?: string; duration?: number };
+  metadata: { speakers: number; mode?: string };
   created_at?: string;
+  file_name: string;
+  duration: number;
+  language: string;
+  confidence: number;
+  segments?: Array<{
+    start: number;
+    end: number;
+    text: string;
+  }>;
 }
 
 export class ApiService {

@@ -47,9 +47,9 @@ export default function TranscriptionHistory({ onSelectTranscription }: Transcri
     }
   };
 
-  const filteredTranscriptions = transcriptions.filter(t =>
+const filteredTranscriptions = transcriptions.filter(t =>
     t.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+    (t.file_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
@@ -100,7 +100,7 @@ export default function TranscriptionHistory({ onSelectTranscription }: Transcri
         </Badge>
         <Badge variant="outline" className="text-sm">
           <Clock className="w-3 h-3 mr-1" />
-          {Math.round(transcriptions.reduce((acc, t) => acc + t.duration, 0) / 60)} min total
+          {Math.round(transcriptions.reduce((acc, t) => acc + (t.duration || 0), 0) / 60)} min total
         </Badge>
       </div>
 
@@ -123,22 +123,22 @@ export default function TranscriptionHistory({ onSelectTranscription }: Transcri
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base font-medium truncate">
-                      {transcription.file_name}
+                      {transcription.file_name || 'Recording'}
                     </CardTitle>
                     <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(transcription.created_at)}
+                        {formatDate(transcription.created_at || new Date().toISOString())}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {formatDuration(transcription.duration)}
+                        {formatDuration(transcription.duration || 0)}
                       </div>
                       <Badge variant="secondary" className="text-xs">
-                        {transcription.language}
+                        {transcription.language || 'en'}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {Math.round(transcription.confidence * 100)}% confidence
+                        {Math.round((transcription.confidence || 0.9) * 100)}% confidence
                       </Badge>
                     </div>
                   </div>
