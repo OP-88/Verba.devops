@@ -1,14 +1,14 @@
 # Core FastAPI
 fastapi==0.115.0
-uvicorn[standard]==0.32.0
+uvicorn==0.30.6
 python-multipart==0.0.12
 pydantic==2.9.0
 
 # AI/ML Stack for Transcription & Diarization
-openai-whisper==20240930
+openai-whisper==2023.11.17
 torch==2.5.0
 torchaudio==2.5.0
-transformers==4.45.0
+transformers==4.36.2
 numpy==2.0.0
 
 # Speaker Diarization & Summarization

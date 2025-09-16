@@ -1,6 +1,6 @@
 import { TranscriptionResult } from '@/types';
 
-const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface Transcription {
   id?: number;
@@ -9,10 +9,10 @@ export interface Transcription {
   chatbot?: string;
   metadata: { speakers: number; mode?: string };
   created_at?: string;
-  file_name: string;
-  duration: number;
-  language: string;
-  confidence: number;
+  file_name?: string;
+  duration?: number;
+  language?: string;
+  confidence?: number;
   segments?: Array<{
     start: number;
     end: number;
@@ -61,14 +61,39 @@ export class ApiService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
         console.error('Transcription error:', errorData);
-        throw new Error(`Transcription failed: ${response.status}`);
+        throw new Error(`Transcription failed: ${response.status} - ${errorData.detail}`);
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error transcribing audio:', error);
+      throw error;
+    }
+  }
+
+  async transcribeFile(file: File, mode: string = 'offline'): Promise<Transcription> {
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+      formData.append('mode', mode);
+      formData.append('session_id', 'default');
+      
+      const response = await fetch(`${API_BASE_URL}/transcribe`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error('File transcription error:', errorData);
+        throw new Error(`File transcription failed: ${response.status} - ${errorData.detail}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error transcribing file:', error);
       throw error;
     }
   }
