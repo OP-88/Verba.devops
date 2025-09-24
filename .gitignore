@@ -7,18 +7,50 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Node
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.cache/
 *.local
 
-# Editor directories and files
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+ENV/
+.tox/
+.ruff_cache/
+
+# Rust/Tauri
+/target/
+src-tauri/target/
+
+# Env and databases
+.env
+backend/.env
+*.db
+*.db-*
+*.sqlite3
+
+# OS/IDE
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# App-specific generated
+backend/verba_app.db*
+
+# Package managers
+bun.lockb
