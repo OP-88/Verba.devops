@@ -22,6 +22,7 @@ import json
 import uvicorn
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx
@@ -448,12 +449,24 @@ async def startup_event():
     conn.close()
     print("✅ Database initialized")
 
+# Add security middleware
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["localhost", "127.0.0.1", "*.localhost"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "tauri://localhost"],
+    allow_origins=[
+        "http://localhost:8080",  # Vite dev server
+        "http://localhost:5173", 
+        "http://localhost:3000", 
+        "tauri://localhost"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Be explicit about methods
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Pydantic models
