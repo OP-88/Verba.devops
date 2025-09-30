@@ -1,14 +1,14 @@
-# Core FastAPI
-fastapi==0.115.0
+# Core FastAPI - Updated for security
+fastapi==0.115.6
 uvicorn==0.30.6
-python-multipart==0.0.12
+python-multipart==0.0.18  # Fixed CVE-2024-53981 DoS vulnerability
 pydantic==2.9.0
 
-# AI/ML Stack for Transcription & Diarization
-openai-whisper==2023.11.17
-torch==2.5.0
-torchaudio==2.5.0
-transformers==4.36.2
+# AI/ML Stack for Transcription & Diarization - Updated for security
+openai-whisper==20250625
+torch==2.7.1  # Fixed CVE-2025-32434 RCE vulnerability
+torchaudio==2.8.0
+transformers==4.53.0  # Fixed multiple RCE and ReDoS vulnerabilities
 numpy==2.0.0
 
 # Speaker Diarization & Summarization
@@ -24,11 +24,11 @@ scipy==1.14.0
 # Voice Activity Detection
 webrtcvad==2.0.10
 
-# Utilities & Environment
+# Utilities & Environment - Updated for security
 python-dotenv==1.0.1
 loguru==0.7.2
 psutil==6.0.0
-requests==2.31.0
+requests==2.32.4  # Fixed CVE-2024-47081 credential leakage
 httpx==0.27.0
 
 # Database
