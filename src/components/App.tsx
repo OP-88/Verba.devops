@@ -1,18 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Mic, Upload, History, WifiOff, Wifi, MessageSquare } from 'lucide-react';
-import MicrophoneRecorder from './MicrophoneRecorder';
-import AudioUploader from './AudioUploader';
-import TranscriptionHistory from './TranscriptionHistory';
-import TranscriptionDisplay from './TranscriptionDisplay';
-import { apiService, Transcription } from '@/services/api';
+import { Mic, Upload, History, WifiOff, Wifi, FileText, Clock, Download, User, Play } from 'lucide-react';
 import { toast } from 'sonner';
+import { saveAs } from 'file-saver';
+
+// Types
+interface Transcription {
+  id?: number;
+  text: string;
+  summary: string;
+  metadata: { speakers: number };
+  timestamp?: string;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// API Functions
+async function transcribeAudio(audioBlob: Blob): Promise<Transcription> {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'recording.wav');
+  const response = await fetch(`${API_BASE_URL}/transcribe?mode=offline`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) throw new Error(`Transcription failed: ${response.status}`);
+  return response.json();
+}
+
+async function getHistory(): Promise<Transcription[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/transcriptions?session_id=default`);
+    if (!response.ok) throw new Error('Failed to fetch history');
+    return response.json();
+  } catch {
+    return [];
+  }
+}
+
+async function checkHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 
 export default function App() {
@@ -20,14 +56,15 @@ export default function App() {
   const [currentTranscription, setCurrentTranscription] = useState<Transcription | null>(null);
   const [backendStatus, setBackendStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [mode, setMode] = useState<'offline' | 'hybrid'>('offline');
-  const [chatQuery, setChatQuery] = useState('');
-  const [chatResponse, setChatResponse] = useState('');
-  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
-    // Check backend connection on startup
+    // Check backend connection and load history
     checkBackendConnection();
+    loadHistory();
     
     // Check every 30 seconds
     const interval = setInterval(checkBackendConnection, 30000);
@@ -45,41 +82,92 @@ export default function App() {
   }, []);
 
   const checkBackendConnection = async () => {
+    const isHealthy = await checkHealth();
+    setBackendStatus(isHealthy ? 'connected' : 'error');
+  };
+
+  const loadHistory = async () => {
+    const history = await getHistory();
+    setTranscriptions(history);
+  };
+
+  // Microphone Recording
+  const startRecording = async () => {
     try {
-      await apiService.checkHealth();
-      setBackendStatus('connected');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        try {
+          const result = await transcribeAudio(blob);
+          setCurrentTranscription(result);
+          setTranscriptions(prev => [{ ...result, timestamp: new Date().toISOString() }, ...prev]);
+          setActiveTab('result');
+          toast.success('Transcription complete');
+        } catch (error) {
+          toast.error('Transcription failed');
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      toast.success('Recording started');
     } catch (error) {
-      setBackendStatus('error');
+      toast.error('Microphone access denied');
     }
   };
 
-  const handleTranscriptionComplete = (result: Transcription) => {
-    setCurrentTranscription(result);
-    setActiveTab('result');
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+      toast.info('Processing transcription...');
+    }
   };
 
-  const handleChat = async () => {
-    if (mode === 'offline') {
-      toast.error('Chatbot available in hybrid mode only');
+  // File Upload
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !['audio/mpeg', 'audio/wav', 'audio/x-m4a'].includes(file.type)) {
+      toast.error('Invalid file format (MP3/WAV/M4A only)');
       return;
     }
+
+    const formData = new FormData();
+    formData.append('audio', file);
     
-    if (!chatQuery.trim()) {
-      toast.error('Please enter a question');
-      return;
-    }
-
-    setIsChatLoading(true);
     try {
-      const response = await apiService.chatWithAI(chatQuery);
-      setChatResponse(response);
-      toast.success('AI response received');
+      setUploadProgress(50);
+      toast.info('Uploading and processing...');
+      const response = await fetch(`${API_BASE_URL}/transcribe?mode=offline`, {
+        method: 'POST',
+        body: formData,
+      });
+      setUploadProgress(100);
+      
+      if (!response.ok) throw new Error('Upload failed');
+      const result = await response.json();
+      setCurrentTranscription(result);
+      setTranscriptions(prev => [{ ...result, timestamp: new Date().toISOString() }, ...prev]);
+      setActiveTab('result');
+      toast.success('Transcription complete');
+      setTimeout(() => setUploadProgress(0), 1000);
     } catch (error) {
-      toast.error('Failed to get AI response');
-      setChatResponse('Failed to connect to AI assistant');
-    } finally {
-      setIsChatLoading(false);
+      toast.error('Upload failed');
+      setUploadProgress(0);
     }
+  };
+
+  // Export
+  const exportNote = (text: string, id?: number) => {
+    saveAs(new Blob([text], { type: 'text/plain' }), `transcript-${id || 'current'}.md`);
+    toast.success('Transcript exported');
   };
 
   const getStatusColor = () => {
@@ -116,29 +204,19 @@ export default function App() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                Verba AI Transcription
+                Verba Audio Transcription
               </h1>
               <p className="text-slate-300 text-sm sm:text-base">
                 Offline-first audio transcription with speaker diarization
               </p>
             </div>
             
-            {/* Status and Mode Toggle */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-white text-sm">Hybrid Mode</span>
-                <Switch 
-                  checked={mode === 'hybrid'} 
-                  onCheckedChange={(checked) => setMode(checked ? 'hybrid' : 'offline')} 
-                  aria-label="Toggle offline/hybrid mode" 
-                />
-              </div>
-              <Badge variant="outline" className="border-white/20 text-white">
-                <div className={`w-2 h-2 rounded-full ${getStatusColor()} mr-2`}></div>
-                {isOnline ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
-                {getStatusText()}
-              </Badge>
-            </div>
+            {/* Status Badge */}
+            <Badge variant="outline" className="border-white/20 text-white">
+              <div className={`w-2 h-2 rounded-full ${getStatusColor()} mr-2`}></div>
+              {isOnline ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
+              {getStatusText()}
+            </Badge>
           </div>
 
         {/* Connection Alert */}
@@ -162,11 +240,11 @@ export default function App() {
           {/* Main Interface */}
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-2xl">
             <CardHeader className="pb-6">
-              <CardTitle className="text-white text-xl">AI Audio Processing</CardTitle>
+              <CardTitle className="text-white text-xl">Audio Processing</CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/10">
+                <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/10">
                   <TabsTrigger 
                     value="record" 
                     className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
@@ -188,93 +266,167 @@ export default function App() {
                     <History className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">History</span>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="result" 
-                    className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
-                    disabled={!currentTranscription}
-                  >
-                    <span className="hidden sm:inline">Result</span>
-                    <span className="sm:hidden">📝</span>
-                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="record" className="mt-6">
-                  <MicrophoneRecorder 
-                    onTranscriptionComplete={handleTranscriptionComplete}
-                    isOnline={backendStatus === 'connected'}
-                    mode={mode}
-                  />
+                {/* Record Tab */}
+                <TabsContent value="record" className="mt-6 space-y-4">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={startRecording}
+                      disabled={isRecording || backendStatus !== 'connected'}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                      size="lg"
+                    >
+                      <Mic className="h-5 w-5 mr-2" />
+                      Start Recording
+                    </Button>
+                    <Button
+                      onClick={stopRecording}
+                      disabled={!isRecording}
+                      variant="destructive"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      Stop Recording
+                    </Button>
+                  </div>
+                  {isRecording && (
+                    <div className="flex items-center justify-center gap-2 text-red-400 animate-pulse">
+                      <div className="h-3 w-3 bg-red-500 rounded-full" />
+                      Recording in progress...
+                    </div>
+                  )}
+                  <p className="text-sm text-slate-300 text-center">
+                    Click Start to begin recording from your microphone
+                  </p>
                 </TabsContent>
 
-                <TabsContent value="upload" className="mt-6">
-                  <AudioUploader 
-                    onTranscriptionComplete={handleTranscriptionComplete}
-                    isOnline={backendStatus === 'connected'}
-                    mode={mode}
+                {/* Upload Tab */}
+                <TabsContent value="upload" className="mt-6 space-y-4">
+                  <input
+                    type="file"
+                    accept="audio/mpeg,audio/wav,audio/x-m4a"
+                    onChange={handleUpload}
+                    disabled={backendStatus !== 'connected'}
+                    className="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:text-white hover:file:from-blue-700 hover:file:to-purple-700 cursor-pointer disabled:opacity-50"
                   />
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="space-y-2">
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-center text-slate-300">{uploadProgress}%</p>
+                    </div>
+                  )}
+                  <p className="text-sm text-slate-300 text-center">
+                    Supported formats: MP3, WAV, M4A
+                  </p>
                 </TabsContent>
 
+                {/* History Tab */}
                 <TabsContent value="history" className="mt-6">
-                  <TranscriptionHistory onSelectTranscription={setCurrentTranscription} />
-                </TabsContent>
-
-                <TabsContent value="result" className="mt-6">
-                  {currentTranscription && (
-                    <TranscriptionDisplay transcription={currentTranscription} />
+                  {transcriptions.length === 0 ? (
+                    <p className="text-sm text-slate-300 text-center py-8">
+                      No transcriptions yet
+                    </p>
+                  ) : (
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                      {transcriptions.map((t, idx) => (
+                        <div 
+                          key={t.id || idx} 
+                          className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setCurrentTranscription(t);
+                            setActiveTab('record');
+                          }}
+                        >
+                          <p className="text-xs text-slate-400 mb-2">
+                            {t.timestamp ? new Date(t.timestamp).toLocaleString() : 'Recent'}
+                          </p>
+                          <p className="text-sm text-white line-clamp-3 mb-2">{t.text}</p>
+                          {t.summary && (
+                            <p className="text-xs text-slate-400 italic mb-2 line-clamp-2">
+                              {t.summary}
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportNote(t.text, t.id);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="flex-1 text-white hover:bg-white/10"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Export
+                            </Button>
+                            <Badge variant="outline" className="border-white/20 text-white">
+                              <User className="h-3 w-3 mr-1" />
+                              {t.metadata.speakers}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </TabsContent>
               </Tabs>
+
+              {/* Current Transcription Display */}
+              {currentTranscription && activeTab !== 'history' && (
+                <div className="mt-6 space-y-4 border-t border-white/10 pt-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-semibold flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Transcription Result
+                    </h3>
+                    <Button
+                      onClick={() => exportNote(currentTranscription.text, currentTranscription.id)}
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <h4 className="text-white font-semibold mb-2">Transcript</h4>
+                    <pre className="whitespace-pre-wrap text-sm text-slate-300">
+                      {currentTranscription.text}
+                    </pre>
+                  </div>
+
+                  {currentTranscription.summary && (
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                      <h4 className="text-white font-semibold mb-2">Summary</h4>
+                      <p className="text-sm text-slate-300">{currentTranscription.summary}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                    <Badge variant="outline" className="border-white/20 text-white flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {currentTranscription.metadata.speakers} Speaker{currentTranscription.metadata.speakers !== 1 ? 's' : ''}
+                    </Badge>
+                    {currentTranscription.timestamp && (
+                      <Badge variant="outline" className="border-white/20 text-white flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(currentTranscription.timestamp).toLocaleString()}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* AI Chatbot Sidebar (Hybrid Mode Only) */}
-        {mode === 'hybrid' && (
-          <div className="w-full lg:w-80 xl:w-96">
-            <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-2xl h-fit">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white text-lg flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  AI Assistant
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  value={chatQuery}
-                  onChange={(e) => setChatQuery(e.target.value)}
-                  placeholder="Ask about the transcript (e.g., 'Summarize this meeting')"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-slate-400 min-h-[100px] resize-none"
-                  aria-label="Chat query input"
-                />
-                <Button 
-                  onClick={handleChat} 
-                  disabled={isChatLoading || !chatQuery.trim()}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  aria-label="Send chat query"
-                >
-                  {isChatLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Ask AI Assistant'
-                  )}
-                </Button>
-                
-                {chatResponse && (
-                  <div 
-                    className="bg-white/5 border border-white/20 rounded-lg p-4 text-white text-sm"
-                    aria-live="polite"
-                  >
-                    <h4 className="font-semibold mb-2">AI Response:</h4>
-                    <p className="whitespace-pre-wrap">{chatResponse}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="text-center text-slate-400 text-sm mt-8">
