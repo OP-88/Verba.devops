@@ -3,16 +3,6 @@
 This is a complete, self-contained React frontend application.
 All components, hooks, utilities, and UI elements are included in this single file.
 
-To use this elsewhere:
-1. Install dependencies: React, Lucide React, Class Variance Authority
-2. Add the CSS styles (see bottom of file)
-3. Import and use the StudySpotApp component
-
-Dependencies needed:
-- react
-- lucide-react
-- class-variance-authority
-- clsx or tailwind-merge (for className merging)
 
 */
 
