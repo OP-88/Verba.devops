@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 def vad_filter(audio_data: np.ndarray, sr: int = 16000) -> np.ndarray:
     """
-    Proprietary VAD filter implementation placeholder.
+    Enhanced VAD filter with multiple approaches.
     
-    This function should implement advanced voice activity detection
+    This function implements advanced voice activity detection
     to filter out silence and noise from audio data.
     
     Args:
@@ -24,39 +24,71 @@ def vad_filter(audio_data: np.ndarray, sr: int = 16000) -> np.ndarray:
         
     Returns:
         Filtered audio data with silence removed
-        
-    TODO: Replace with actual proprietary VAD implementation
     """
-    # Placeholder implementation - replace with proprietary algorithm
-    logger.info(f"🎙️ Applying VAD filter to {len(audio_data)} samples at {sr}Hz")
+    logger.info(f"🎙️ Applying enhanced VAD filter to {len(audio_data)} samples at {sr}Hz")
     
-    # Basic energy-based VAD as placeholder
-    frame_length = int(0.025 * sr)  # 25ms frames
-    hop_length = int(0.010 * sr)    # 10ms hop
-    
-    # Compute RMS energy
-    rms = librosa.feature.rms(
-        y=audio_data, 
-        frame_length=frame_length, 
-        hop_length=hop_length
-    )[0]
-    
-    # Simple threshold-based VAD
-    threshold = np.percentile(rms, 30)  # Bottom 30% as silence
-    
-    # Create voice activity mask
-    voice_frames = rms > threshold
-    
-    # Apply some smoothing to avoid choppy results
-    kernel_size = 5
-    voice_frames = np.convolve(voice_frames, np.ones(kernel_size)/kernel_size, mode='same') > 0.5
-    
-    # Convert frame-based mask to sample-based
-    voice_mask = np.repeat(voice_frames, hop_length)
-    voice_mask = voice_mask[:len(audio_data)]
-    
-    # Apply mask to audio
-    filtered_audio = audio_data * voice_mask
+    # Try webrtcvad first for better accuracy
+    try:
+        import webrtcvad
+        vad = webrtcvad.Vad(2)  # Moderate aggressiveness
+        
+        # Convert to int16 for webrtcvad
+        audio_int16 = (audio_data * 32768).astype(np.int16)
+        
+        frame_duration = 30  # ms
+        frame_size = int(sr * frame_duration / 1000)
+        
+        voice_frames = []
+        for i in range(0, len(audio_int16) - frame_size, frame_size):
+            frame = audio_int16[i:i + frame_size]
+            try:
+                is_speech = vad.is_speech(frame.tobytes(), sr)
+                voice_frames.extend([is_speech] * frame_size)
+            except:
+                # If frame processing fails, assume it's speech
+                voice_frames.extend([True] * frame_size)
+        
+        # Pad to match original length
+        while len(voice_frames) < len(audio_data):
+            voice_frames.append(False)
+        voice_frames = voice_frames[:len(audio_data)]
+        
+        # Apply smoothing
+        kernel_size = int(0.1 * sr)  # 100ms smoothing
+        voice_mask = np.convolve(voice_frames, np.ones(kernel_size)/kernel_size, mode='same') > 0.3
+        
+        filtered_audio = audio_data * voice_mask.astype(np.float32)
+        
+        logger.info(f"✅ WebRTC VAD applied successfully")
+        
+    except ImportError:
+        logger.warning("⚠️ WebRTC VAD not available, using energy-based fallback")
+        # Fallback to energy-based VAD
+        frame_length = int(0.025 * sr)  # 25ms frames
+        hop_length = int(0.010 * sr)    # 10ms hop
+        
+        # Compute RMS energy
+        rms = librosa.feature.rms(
+            y=audio_data, 
+            frame_length=frame_length, 
+            hop_length=hop_length
+        )[0]
+        
+        # Adaptive threshold
+        threshold = np.percentile(rms, 25)  # Bottom 25% as silence
+        
+        # Create voice activity mask
+        voice_frames = rms > threshold
+        
+        # Apply smoothing
+        kernel_size = 5
+        voice_frames = np.convolve(voice_frames, np.ones(kernel_size)/kernel_size, mode='same') > 0.5
+        
+        # Convert frame-based mask to sample-based
+        voice_mask = np.repeat(voice_frames, hop_length)
+        voice_mask = voice_mask[:len(audio_data)]
+        
+        filtered_audio = audio_data * voice_mask
     
     # Remove leading/trailing silence
     non_zero_indices = np.nonzero(filtered_audio)[0]
@@ -64,6 +96,11 @@ def vad_filter(audio_data: np.ndarray, sr: int = 16000) -> np.ndarray:
         start_idx = non_zero_indices[0]
         end_idx = non_zero_indices[-1]
         filtered_audio = filtered_audio[start_idx:end_idx+1]
+    
+    # Ensure we don't return empty audio
+    if len(filtered_audio) == 0:
+        logger.warning("⚠️ VAD removed all audio, returning original")
+        filtered_audio = audio_data
     
     logger.info(f"✅ VAD filter applied: {len(audio_data)} -> {len(filtered_audio)} samples ({(len(filtered_audio)/len(audio_data)*100):.1f}%)")
     

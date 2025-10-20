@@ -6,6 +6,7 @@ Provides offline speaker identification and segmentation
 import os
 import logging
 import tempfile
+import gc
 from typing import List, Dict, Any, Tuple
 import torch
 import torchaudio
@@ -80,6 +81,11 @@ class SpeakerDiarizationService:
             merged_segments = self._merge_short_segments(segments)
             
             logger.info(f"✅ Detected {len(set(s['speaker'] for s in merged_segments))} speakers in {len(merged_segments)} segments")
+            
+            # Memory cleanup after processing
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
             
             return merged_segments
             

@@ -5,6 +5,7 @@ Provides offline text summarization and key points extraction
 
 import logging
 import re
+import gc
 from typing import Dict, List, Any, Optional
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
@@ -124,6 +125,12 @@ class SummarizationService:
             }
             
             logger.info(f"✅ Summary generated: {len(final_summary)} chars, {len(key_points)} key points")
+            
+            # Memory cleanup after processing
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
+            
             return result
             
         except Exception as e:
