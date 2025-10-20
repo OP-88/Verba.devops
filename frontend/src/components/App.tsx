@@ -1,34 +1,90 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Mic, Upload, History, WifiOff, Wifi, FileText, Clock, Download, User, Play } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Mic, Upload, History, WifiOff, Wifi, FileText, Clock, Download, User, Play, Pause, Square, Volume2, Users, Brain, Zap, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
 
-// Types
-interface Transcription {
-  id?: number;
+// Enhanced Types
+interface TranscriptionSegment {
+  start: number;
+  end: number;
   text: string;
+  speaker?: string;
+  confidence?: number;
+}
+
+interface TranscriptionMetadata {
+  speakers: number;
+  duration: number;
+  language: string;
+  confidence: number;
+  processing_time?: number;
+  model_used?: string;
+}
+
+interface AIAnalysis {
   summary: string;
-  metadata: { speakers: number };
+  key_points: string[];
+  action_items: string[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  topics?: string[];
+}
+
+interface Transcription {
+  id?: string;
+  text: string;
+  segments?: TranscriptionSegment[];
+  metadata: TranscriptionMetadata;
+  ai_analysis?: AIAnalysis;
   timestamp?: string;
+  file_name?: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// API Functions
-async function transcribeAudio(audioBlob: Blob): Promise<Transcription> {
+// Enhanced API Functions
+async function transcribeAudioEnhanced(audioBlob: Blob, options?: {
+  vad?: boolean;
+  diarization?: boolean;
+  summarization?: boolean;
+  model?: string;
+}): Promise<Transcription> {
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'recording.wav');
-  const response = await fetch(`${API_BASE_URL}/transcribe?mode=offline`, {
+  formData.append('audio', audioBlob, 'recording.webm');
+  
+  const params = new URLSearchParams({
+    mode: 'offline',
+    vad: String(options?.vad ?? true),
+    diarization: String(options?.diarization ?? true),
+    summarization: String(options?.summarization ?? true),
+    model: options?.model ?? 'base',
+    format: 'enhanced'
+  });
+  
+  const response = await fetch(`${API_BASE_URL}/transcribe?${params}`, {
     method: 'POST',
     body: formData,
   });
-  if (!response.ok) throw new Error(`Transcription failed: ${response.status}`);
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Transcription failed: ${response.status} - ${error}`);
+  }
+  
   return response.json();
+}
+
+// Legacy function for compatibility
+async function transcribeAudio(audioBlob: Blob): Promise<Transcription> {
+  return transcribeAudioEnhanced(audioBlob);
 }
 
 async function getHistory(): Promise<Transcription[]> {
@@ -58,8 +114,69 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'txt' | 'md' | 'json' | 'srt'>('md');
+  const [vadEnabled, setVadEnabled] = useState(true);
+  const [diarizationEnabled, setDiarizationEnabled] = useState(true);
+  const [summarizationEnabled, setSummarizationEnabled] = useState(true);
+  
+  // Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const animationRef = useRef<number>();
+
+  // Keyboard Shortcuts
+  useHotkeys('ctrl+r', (e) => {
+    e.preventDefault();
+    if (!isRecording) {
+      startRecording();
+    } else {
+      stopRecording();
+    }
+  }, { enableOnFormTags: true });
+  
+  useHotkeys('ctrl+p', (e) => {
+    e.preventDefault();
+    if (isRecording) {
+      togglePause();
+    }
+  }, { enableOnFormTags: true });
+  
+  useHotkeys('ctrl+s', (e) => {
+    e.preventDefault();
+    if (currentTranscription) {
+      exportTranscription(currentTranscription, exportFormat);
+    }
+  }, { enableOnFormTags: true });
+  
+  useHotkeys('ctrl+e', (e) => {
+    e.preventDefault();
+    setShowAIAnalysis(!showAIAnalysis);
+  }, { enableOnFormTags: true });
+  
+  useHotkeys('tab', (e) => {
+    if (e.shiftKey) {
+      // Shift+Tab - previous tab
+      e.preventDefault();
+      const tabs = ['record', 'upload', 'history'];
+      const currentIndex = tabs.indexOf(activeTab);
+      const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+      setActiveTab(tabs[prevIndex]);
+    } else {
+      // Tab - next tab
+      const tabs = ['record', 'upload', 'history'];
+      const currentIndex = tabs.indexOf(activeTab);
+      const nextIndex = (currentIndex + 1) % tabs.length;
+      setActiveTab(tabs[nextIndex]);
+    }
+  }, { enableOnFormTags: false });
 
   useEffect(() => {
     // Check backend connection and load history
@@ -78,6 +195,12 @@ export default function App() {
       clearInterval(interval);
       window.removeEventListener('online', handleOnlineStatus);
       window.removeEventListener('offline', handleOnlineStatus);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   }, []);
 
@@ -91,34 +214,110 @@ export default function App() {
     setTranscriptions(history);
   };
 
-  // Microphone Recording
+  // Audio level monitoring
+  const updateAudioLevel = useCallback(() => {
+    if (analyserRef.current) {
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+      analyserRef.current.getByteFrequencyData(dataArray);
+      
+      const average = dataArray.reduce((sum, value) => sum + value) / dataArray.length;
+      setAudioLevel(Math.min(100, (average / 255) * 100));
+      
+      animationRef.current = requestAnimationFrame(updateAudioLevel);
+    }
+  }, []);
+
+  // Microphone Recording with enhanced features
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: vadEnabled,
+          autoGainControl: true,
+          sampleRate: 16000
+        }
+      });
+      
+      // Set up audio analysis
+      audioContextRef.current = new AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      
+      updateAudioLevel();
+      
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
       recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setIsProcessing(true);
+        
         try {
-          const result = await transcribeAudio(blob);
+          const result = await transcribeAudioEnhanced(blob);
           setCurrentTranscription(result);
           setTranscriptions(prev => [{ ...result, timestamp: new Date().toISOString() }, ...prev]);
-          setActiveTab('result');
-          toast.success('Transcription complete');
+          setActiveTab('record');
+          toast.success('✨ Transcription complete with AI analysis!');
         } catch (error) {
-          toast.error('Transcription failed');
+          console.error('Transcription failed:', error);
+          toast.error('❌ Transcription failed. Please try again.');
+        } finally {
+          setIsProcessing(false);
         }
+        
+        // Cleanup
         stream.getTracks().forEach(track => track.stop());
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
       };
 
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
-      toast.success('Recording started');
+      setRecordingTime(0);
+      
+      // Start recording timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      toast.success('🎙️ Recording started (Ctrl+R to stop, Ctrl+P to pause)');
     } catch (error) {
-      toast.error('Microphone access denied');
+      console.error('Recording failed:', error);
+      toast.error('❌ Microphone access denied or not available.');
+    }
+  };
+
+  const togglePause = () => {
+    if (mediaRecorder && isRecording) {
+      if (isPaused) {
+        mediaRecorder.resume();
+        recordingTimerRef.current = setInterval(() => {
+          setRecordingTime(prev => prev + 1);
+        }, 1000);
+        toast.info('▶️ Recording resumed');
+      } else {
+        mediaRecorder.pause();
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+        }
+        toast.info('⏸️ Recording paused');
+      }
+      setIsPaused(!isPaused);
     }
   };
 
@@ -126,48 +325,201 @@ export default function App() {
     if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
+      setIsPaused(false);
       setMediaRecorder(null);
-      toast.info('Processing transcription...');
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      
+      toast.info('🔄 Processing transcription with AI analysis...');
     }
   };
 
-  // File Upload
+  // Enhanced File Upload
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !['audio/mpeg', 'audio/wav', 'audio/x-m4a'].includes(file.type)) {
-      toast.error('Invalid file format (MP3/WAV/M4A only)');
+    if (!file) return;
+    
+    const supportedTypes = [
+      'audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/mp4', 
+      'audio/webm', 'audio/ogg', 'audio/flac', 'audio/aac'
+    ];
+    
+    if (!supportedTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|m4a|mp4|webm|ogg|flac|aac)$/i)) {
+      toast.error('❌ Invalid file format. Supported: MP3, WAV, M4A, MP4, WebM, OGG, FLAC, AAC');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('audio', file);
+    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      toast.error('❌ File too large. Maximum size: 100MB');
+      return;
+    }
     
     try {
-      setUploadProgress(50);
-      toast.info('Uploading and processing...');
-      const response = await fetch(`${API_BASE_URL}/transcribe?mode=offline`, {
-        method: 'POST',
-        body: formData,
-      });
-      setUploadProgress(100);
+      setUploadProgress(10);
+      setIsProcessing(true);
+      toast.info('🚀 Uploading and processing with AI analysis...');
       
-      if (!response.ok) throw new Error('Upload failed');
-      const result = await response.json();
+      const result = await transcribeAudioEnhanced(file, {
+        vad: vadEnabled,
+        diarization: diarizationEnabled,
+        summarization: summarizationEnabled
+      });
+      
+      // Add file name to the result
+      result.file_name = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+      
+      setUploadProgress(100);
       setCurrentTranscription(result);
       setTranscriptions(prev => [{ ...result, timestamp: new Date().toISOString() }, ...prev]);
-      setActiveTab('result');
-      toast.success('Transcription complete');
-      setTimeout(() => setUploadProgress(0), 1000);
+      setActiveTab('record');
+      
+      toast.success('✨ Transcription complete with AI analysis!');
+      setTimeout(() => setUploadProgress(0), 2000);
     } catch (error) {
-      toast.error('Upload failed');
+      console.error('Upload failed:', error);
+      toast.error(`❌ Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setUploadProgress(0);
+    } finally {
+      setIsProcessing(false);
+      // Clear the input
+      event.target.value = '';
     }
   };
 
-  // Export
-  const exportNote = (text: string, id?: number) => {
-    saveAs(new Blob([text], { type: 'text/plain' }), `transcript-${id || 'current'}.md`);
-    toast.success('Transcript exported');
+  // Enhanced Export Functions
+  const exportTranscription = (transcription: Transcription, format: 'txt' | 'md' | 'json' | 'srt') => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${transcription.file_name || 'transcription'}-${timestamp}`;
+    
+    let content: string;
+    let mimeType: string;
+    let extension: string;
+    
+    switch (format) {
+      case 'md':
+        content = generateMarkdown(transcription);
+        mimeType = 'text/markdown';
+        extension = 'md';
+        break;
+      case 'json':
+        content = JSON.stringify(transcription, null, 2);
+        mimeType = 'application/json';
+        extension = 'json';
+        break;
+      case 'srt':
+        content = generateSRT(transcription);
+        mimeType = 'text/plain';
+        extension = 'srt';
+        break;
+      default:
+        content = generatePlainText(transcription);
+        mimeType = 'text/plain';
+        extension = 'txt';
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    saveAs(blob, `${filename}.${extension}`);
+    toast.success(`📁 Exported as ${format.toUpperCase()}`);
+  };
+  
+  const generateMarkdown = (transcription: Transcription): string => {
+    let md = `# Transcription Export\n\n`;
+    md += `**Created:** ${transcription.timestamp ? new Date(transcription.timestamp).toLocaleString() : 'Now'}\n`;
+    md += `**Duration:** ${transcription.metadata.duration?.toFixed(1) || 'Unknown'} seconds\n`;
+    md += `**Language:** ${transcription.metadata.language || 'Auto-detected'}\n`;
+    md += `**Speakers:** ${transcription.metadata.speakers}\n`;
+    md += `**Confidence:** ${(transcription.metadata.confidence * 100).toFixed(1)}%\n\n`;
+    
+    if (transcription.ai_analysis?.summary) {
+      md += `## Summary\n\n${transcription.ai_analysis.summary}\n\n`;
+      
+      if (transcription.ai_analysis.key_points?.length) {
+        md += `## Key Points\n\n`;
+        transcription.ai_analysis.key_points.forEach(point => {
+          md += `- ${point}\n`;
+        });
+        md += '\n';
+      }
+      
+      if (transcription.ai_analysis.action_items?.length) {
+        md += `## Action Items\n\n`;
+        transcription.ai_analysis.action_items.forEach(item => {
+          md += `- [ ] ${item}\n`;
+        });
+        md += '\n';
+      }
+    }
+    
+    md += `## Transcript\n\n`;
+    
+    if (transcription.segments?.length) {
+      transcription.segments.forEach(segment => {
+        const timeStr = `[${segment.start.toFixed(1)}s - ${segment.end.toFixed(1)}s]`;
+        const speaker = segment.speaker ? `**${segment.speaker}:** ` : '';
+        md += `${timeStr} ${speaker}${segment.text}\n\n`;
+      });
+    } else {
+      md += transcription.text;
+    }
+    
+    return md;
+  };
+  
+  const generateSRT = (transcription: Transcription): string => {
+    if (!transcription.segments?.length) {
+      return `1\n00:00:00,000 --> 00:00:10,000\n${transcription.text}`;
+    }
+    
+    return transcription.segments.map((segment, index) => {
+      const start = formatSRTTime(segment.start);
+      const end = formatSRTTime(segment.end);
+      return `${index + 1}\n${start} --> ${end}\n${segment.text}\n`;
+    }).join('\n');
+  };
+  
+  const formatSRTTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
+  };
+  
+  const generatePlainText = (transcription: Transcription): string => {
+    let text = `TRANSCRIPTION EXPORT\n`;
+    text += `${'='.repeat(50)}\n\n`;
+    text += `Created: ${transcription.timestamp ? new Date(transcription.timestamp).toLocaleString() : 'Now'}\n`;
+    text += `Duration: ${transcription.metadata.duration?.toFixed(1) || 'Unknown'} seconds\n`;
+    text += `Speakers: ${transcription.metadata.speakers}\n\n`;
+    
+    if (transcription.ai_analysis?.summary) {
+      text += `SUMMARY\n${'='.repeat(20)}\n${transcription.ai_analysis.summary}\n\n`;
+    }
+    
+    text += `TRANSCRIPT\n${'='.repeat(20)}\n\n`;
+    
+    if (transcription.segments?.length) {
+      transcription.segments.forEach(segment => {
+        const speaker = segment.speaker ? `${segment.speaker}: ` : '';
+        text += `[${segment.start.toFixed(1)}s] ${speaker}${segment.text}\n\n`;
+      });
+    } else {
+      text += transcription.text;
+    }
+    
+    return text;
+  };
+  
+  // Legacy export function
+  const exportNote = (text: string, id?: string) => {
+    const transcription: Transcription = {
+      id,
+      text,
+      metadata: { speakers: 1, duration: 0, language: 'unknown', confidence: 1 }
+    };
+    exportTranscription(transcription, 'md');
   };
 
   const getStatusColor = () => {
