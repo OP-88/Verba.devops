@@ -16,9 +16,9 @@ from unittest.mock import Mock, patch, AsyncMock
 
 # Import the modules to test
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from services.enhanced_transcription_service import (
+from backend.services.enhanced_transcription_service import (
     EnhancedTranscriptionService,
     TranscriptionResult,
     TranscriptionSegment
@@ -60,7 +60,7 @@ class TestEnhancedTranscriptionService:
     @pytest.fixture
     def transcription_service(self):
         """Create transcription service instance with mocked dependencies"""
-        with patch('services.enhanced_transcription_service.whisper.load_model') as mock_whisper:
+        with patch('backend.services.enhanced_transcription_service.whisper.load_model') as mock_whisper:
             # Mock Whisper model
             mock_model = Mock()
             mock_model.transcribe.return_value = {
@@ -93,7 +93,7 @@ class TestEnhancedTranscriptionService:
         assert duration > 0
         assert len(audio) == int(duration * transcription_service.sample_rate)
     
-    @patch('services.enhanced_transcription_service.torch.hub.load')
+    @patch('backend.services.enhanced_transcription_service.torch.hub.load')
     def test_vad_service_initialization(self, mock_torch_hub):
         """Test VAD service initialization with Silero VAD"""
         # Mock successful Silero VAD loading
@@ -101,14 +101,14 @@ class TestEnhancedTranscriptionService:
         mock_utils = (Mock(), Mock(), Mock(), Mock(), Mock())
         mock_torch_hub.return_value = (mock_model, mock_utils)
         
-        from services.enhanced_transcription_service import EnhancedVADService
+        from backend.services.enhanced_transcription_service import EnhancedVADService
         vad_service = EnhancedVADService()
         
         assert vad_service.model is not None
         assert vad_service.utils is not None
         mock_torch_hub.assert_called_once()
     
-    @patch('services.enhanced_transcription_service.torch.hub.load')
+    @patch('backend.services.enhanced_transcription_service.torch.hub.load')
     def test_vad_service_fallback(self, mock_torch_hub):
         """Test VAD service fallback to WebRTC when Silero fails"""
         # Mock Silero VAD failure
@@ -117,7 +117,7 @@ class TestEnhancedTranscriptionService:
         with patch('webrtcvad.Vad') as mock_webrtc:
             mock_webrtc.return_value = Mock()
             
-            from services.enhanced_transcription_service import EnhancedVADService
+            from backend.services.enhanced_transcription_service import EnhancedVADService
             vad_service = EnhancedVADService()
             
             assert vad_service.model is None
@@ -140,7 +140,7 @@ class TestEnhancedTranscriptionService:
             assert len(segments) == 1
             assert segments[0] == (0.5, 2.5)
     
-    @patch('services.enhanced_transcription_service.Pipeline.from_pretrained')
+    @patch('backend.services.enhanced_transcription_service.Pipeline.from_pretrained')
     def test_diarization_service(self, mock_pipeline):
         """Test speaker diarization functionality"""
         # Mock diarization pipeline
@@ -151,7 +151,7 @@ class TestEnhancedTranscriptionService:
         ]
         mock_pipeline.return_value = mock_diarization
         
-        from services.enhanced_transcription_service import SpeakerDiarizationService
+        from backend.services.enhanced_transcription_service import SpeakerDiarizationService
         diarization_service = SpeakerDiarizationService()
         
         with tempfile.NamedTemporaryFile(suffix='.wav') as temp_file:
@@ -161,7 +161,7 @@ class TestEnhancedTranscriptionService:
             assert segments[0] == (0.0, 1.0, "Speaker SPEAKER_00")
             assert segments[1] == (1.0, 2.0, "Speaker SPEAKER_01")
     
-    @patch('services.enhanced_transcription_service.pipeline')
+    @patch('backend.services.enhanced_transcription_service.pipeline')
     def test_summarization_service(self, mock_pipeline):
         """Test text summarization functionality"""
         # Mock summarization pipeline
@@ -171,7 +171,7 @@ class TestEnhancedTranscriptionService:
         }]
         mock_pipeline.return_value = mock_summarizer
         
-        from services.enhanced_transcription_service import SummarizationService
+        from backend.services.enhanced_transcription_service import SummarizationService
         summarization_service = SummarizationService()
         
         test_text = "This is a long text that needs to be summarized. " * 10

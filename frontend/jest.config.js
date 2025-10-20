@@ -4,6 +4,16 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+    },
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -16,12 +26,4 @@ export default {
     '<rootDir>/src/**/*.(test|spec).{ts,tsx}',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-    }],
-  },
-  moduleNameMapping: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-  },
 };
