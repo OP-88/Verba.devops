@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""
+Generate sample test audio file for Verba testing
+Creates a WAV file with speech-like characteristics
+"""
+import wave
+import numpy as np
+
+def generate_test_audio():
+    """Generate a 10-second test audio file with multiple speakers simulation"""
+    
+    sample_rate = 16000  # 16kHz for Whisper compatibility
+    duration = 10.0  # 10 seconds
+    
+    # Generate time array
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    
+    # Create speech-like signal with multiple frequency components
+    # Simulate different speakers with different fundamental frequencies
+    
+    # Speaker 1 (0-3 seconds): Lower pitch
+    speaker1_fundamental = 120  # Hz
+    speaker1_formants = [800, 1200, 2400]  # Typical male formants
+    speaker1_signal = np.zeros_like(t)
+    speaker1_mask = (t >= 0) & (t <= 3)
+    
+    for formant in speaker1_formants:
+        amplitude = 0.3 / len(speaker1_formants)
+        speaker1_signal += amplitude * np.sin(2 * np.pi * formant * t) * speaker1_mask
+    
+    # Add fundamental frequency
+    speaker1_signal += 0.2 * np.sin(2 * np.pi * speaker1_fundamental * t) * speaker1_mask
+    
+    # Speaker 2 (4-7 seconds): Higher pitch  
+    speaker2_fundamental = 180  # Hz
+    speaker2_formants = [1000, 1600, 2800]  # Typical female formants
+    speaker2_signal = np.zeros_like(t)
+    speaker2_mask = (t >= 4) & (t <= 7)
+    
+    for formant in speaker2_formants:
+        amplitude = 0.3 / len(speaker2_formants)
+        speaker2_signal += amplitude * np.sin(2 * np.pi * formant * t) * speaker2_mask
+    
+    # Add fundamental frequency
+    speaker2_signal += 0.2 * np.sin(2 * np.pi * speaker2_fundamental * t) * speaker2_mask
+    
+    # Combine speakers
+    audio_signal = speaker1_signal + speaker2_signal
+    
+    # Add silence periods (0-0.5s, 3-4s, 7-8s, 9.5-10s)
+    silence_mask = ((t >= 0) & (t <= 0.5)) | ((t >= 3) & (t <= 4)) | ((t >= 7) & (t <= 8)) | ((t >= 9.5) & (t <= 10))
+    audio_signal[silence_mask] = 0
+    
+    # Add some realistic amplitude modulation (simulate speech rhythm)
+    modulation_freq = 4  # Hz (typical speech rhythm)
+    modulation = 0.5 + 0.5 * np.sin(2 * np.pi * modulation_freq * t)
+    audio_signal *= modulation
+    
+    # Add subtle noise for realism
+    noise = 0.02 * np.random.randn(len(audio_signal))
+    audio_signal += noise
+    
+    # Normalize to prevent clipping
+    max_val = np.max(np.abs(audio_signal))
+    if max_val > 0:
+        audio_signal = audio_signal / max_val * 0.8
+    
+    # Convert to 16-bit integer
+    audio_int16 = (audio_signal * 32767).astype(np.int16)
+    
+    return audio_int16, sample_rate
+
+if __name__ == "__main__":
+    # Generate test audio
+    audio_data, sample_rate = generate_test_audio()
+    
+    # Write to WAV file
+    with wave.open('test.wav', 'wb') as wav_file:
+        wav_file.setnchannels(1)  # Mono
+        wav_file.setsampwidth(2)  # 16-bit
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(audio_data.tobytes())
+    
+    print(f"✅ Generated test.wav ({len(audio_data)/sample_rate:.1f}s, {sample_rate}Hz)")
+    print("   - Contains simulated speech from 2 speakers")
+    print("   - Includes silence periods for VAD testing")
+    print("   - Optimized for Whisper transcription testing")
