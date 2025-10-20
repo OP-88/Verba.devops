@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Download, Edit, Save, X, Speaker, Clock, FileText } from 'lucide-react';
+import { 
+  Copy, Download, Edit, Save, X, Speaker, Clock, FileText, 
+  FileDown, FileType, Hash, Eye 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { TranscriptionResult } from '@/types';
-import { Transcription } from '@/services/api';
+import { Transcription, apiService } from '@/services/api';
 
 interface TranscriptionDisplayProps {
   transcription: Transcription;
@@ -19,43 +23,94 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(transcription.text);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<string>('markdown');
+  const [showExportOptions, setShowExportOptions] = useState(false);
+
+  // Keyboard shortcuts
+  useHotkeys('ctrl+c', (e) => {
+    e.preventDefault();
+    handleCopy();
+  });
+  
+  useHotkeys('ctrl+e', (e) => {
+    e.preventDefault();
+    setIsEditing(!isEditing);
+  });
+  
+  useHotkeys('ctrl+s', (e) => {
+    e.preventDefault();
+    if (isEditing) {
+      handleSaveEdit();
+    } else {
+      handleExport('markdown');
+    }
+  });
+  
+  useHotkeys('esc', (e) => {
+    if (isEditing) {
+      setIsEditing(false);
+      setEditedText(transcription.text);
+    }
+    if (showExportOptions) {
+      setShowExportOptions(false);
+    }
+  });
 
   const handleCopy = () => {
     navigator.clipboard.writeText(transcription.text);
-    toast.success('Transcription copied to clipboard');
+    toast.success('📋 Transcription copied to clipboard');
   };
 
   const handleSaveEdit = () => {
     setIsEditing(false);
-    toast.success('Transcription updated');
+    toast.success('✏️ Transcription updated');
   };
 
-  const handleExport = (format: 'txt' | 'json' | 'srt') => {
-    let content = '';
-    let filename = '';
-    let mimeType = '';
-
-    switch (format) {
-      case 'txt':
-        content = transcription.text;
-        filename = `${transcription.file_name}_transcript.txt`;
-        mimeType = 'text/plain';
-        break;
-      case 'json':
-        content = JSON.stringify(transcription, null, 2);
-        filename = `${transcription.file_name}_transcript.json`;
-        mimeType = 'application/json';
-        break;
-      case 'srt':
-        content = generateSRT();
-        filename = `${transcription.file_name}_transcript.srt`;
-        mimeType = 'text/plain';
-        break;
+  const handleExport = async (format: 'txt' | 'json' | 'srt' | 'markdown' | 'pdf') => {
+    if (format === 'srt') {
+      // Handle SRT locally for backwards compatibility
+      const content = generateSRT();
+      const blob = new Blob([content], { type: 'text/plain' });
+      saveAs(blob, `${transcription.file_name}_transcript.srt`);
+      toast.success('📁 Exported as SRT');
+      return;
     }
 
-    const blob = new Blob([content], { type: mimeType });
-    saveAs(blob, filename);
-    toast.success(`Exported as ${format.toUpperCase()}`);
+    setIsExporting(true);
+    try {
+      // Use backend export API for comprehensive formatting
+      const url = `${apiService.baseURL}/export/${transcription.id}?format=${format}&include_metadata=true&include_speaker_labels=true&include_summary=true`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const filename = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 
+        `${transcription.file_name}_transcript.${format}`;
+      
+      saveAs(blob, filename);
+      toast.success(`📁 Exported as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('❌ Export failed. Please try again.');
+      
+      // Fallback to local export
+      const content = format === 'json' ? 
+        JSON.stringify(transcription, null, 2) : 
+        transcription.text;
+      const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+      saveAs(blob, `${transcription.file_name}_transcript.${format}`);
+      toast.success('📁 Exported with basic formatting');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  
+  const handleQuickExport = () => {
+    setShowExportOptions(!showExportOptions);
   };
 
   const generateSRT = () => {
@@ -127,27 +182,126 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="w-4 h-4 mr-2" />
-            Copy
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
-            {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-            {isEditing ? 'Save' : 'Edit'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('txt')}>
-            <Download className="w-4 h-4 mr-2" />
-            TXT
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('json')}>
-            <Download className="w-4 h-4 mr-2" />
-            JSON
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('srt')}>
-            <Download className="w-4 h-4 mr-2" />
-            SRT
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCopy}
+              aria-label="Copy transcription text (Ctrl+C)"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsEditing(!isEditing)}
+              aria-label={isEditing ? 'Save changes (Ctrl+S)' : 'Edit transcription (Ctrl+E)'}
+            >
+              {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
+              {isEditing ? 'Save' : 'Edit'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleQuickExport}
+              aria-label="Show export options"
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
+          
+          {/* Keyboard shortcut hints */}
+          <div className="text-xs text-muted-foreground space-x-4">
+            <span>Ctrl+C: Copy</span>
+            <span>Ctrl+E: Edit</span>
+            <span>Ctrl+S: {isEditing ? 'Save' : 'Export'}</span>
+            <span>Esc: Cancel</span>
+          </div>
+          
+          {/* Export options */}
+          {showExportOptions && (
+            <div className="border border-border rounded-lg p-4 bg-muted/30">
+              <h4 className="font-medium text-sm mb-3">Export Options</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleExport('markdown')}
+                  disabled={isExporting}
+                  aria-label="Export as Markdown with metadata"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-3 w-3 border-t border-current rounded-full mr-2" />
+                  ) : (
+                    <FileType className="w-4 h-4 mr-2" />
+                  )}
+                  Markdown
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleExport('pdf')}
+                  disabled={isExporting}
+                  aria-label="Export as PDF document"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-3 w-3 border-t border-current rounded-full mr-2" />
+                  ) : (
+                    <FileDown className="w-4 h-4 mr-2" />
+                  )}
+                  PDF
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleExport('json')}
+                  disabled={isExporting}
+                  aria-label="Export as JSON with full data"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-3 w-3 border-t border-current rounded-full mr-2" />
+                  ) : (
+                    <Hash className="w-4 h-4 mr-2" />
+                  )}
+                  JSON
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleExport('txt')}
+                  disabled={isExporting}
+                  aria-label="Export as plain text"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-3 w-3 border-t border-current rounded-full mr-2" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  TXT
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleExport('srt')}
+                  disabled={isExporting}
+                  aria-label="Export as SRT subtitle file"
+                >
+                  {isExporting ? (
+                    <div className="animate-spin h-3 w-3 border-t border-current rounded-full mr-2" />
+                  ) : (
+                    <Clock className="w-4 h-4 mr-2" />
+                  )}
+                  SRT
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                💡 Markdown and PDF include metadata, speaker labels, and summaries when available
+              </p>
+            </div>
+          )}
         </div>
       </Card>
 
