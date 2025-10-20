@@ -1152,23 +1152,6 @@ const StudySpot = ({ onBack }: { onBack: () => void }) => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Study Streak
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary">7</div>
-                <div className="text-sm text-muted-foreground">Days in a row</div>
-                <Button size="sm" variant="outline" className="mt-2">
-                  View History
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
