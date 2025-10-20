@@ -1,19 +1,20 @@
-# 🚀 Verba
-### *The Future of Real-Time Audio Transcription* ✨
+# 🎯 Verba AI Transcription
+### *Offline-First Audio Transcription with Speaker Diarization & AI Summarization*
 
 <div align="center">
 
-![Verba Banner](https://via.placeholder.com/800x200/6366f1/ffffff?text=🎙️+VERBA+•+Real-Time+AI+Transcription)
+![Verba Banner](https://via.placeholder.com/800x200/6366f1/ffffff?text=🎯+VERBA+•+AI+Transcription+•+Privacy-First)
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Whisper AI](https://img.shields.io/badge/Whisper-AI-ff6b35.svg)](https://openai.com/blog/whisper/)
+[![Vercel](https://img.shields.io/badge/Demo-Vercel-000000.svg)](https://verba-devops-fawn.vercel.app/)
 
-**🌟 Privacy-First • Lightning-Fast • AI-Powered • Open Source 🌟**
+**🛡️ Privacy-First • 🚀 Lightning-Fast • 🤖 AI-Powered • 📱 Cross-Platform**
 
-*Transform speech into text in real-time with cutting-edge AI*
+*Complete offline transcription with speaker identification, AI summaries, and export capabilities*
 
 </div>
 
@@ -26,12 +27,13 @@
 <td width="50%">
 
 ### 🔥 **What Makes It Special**
-🛡️ **100% Privacy-First** - All processing happens locally  
-⚡ **Real-Time Magic** - See words appear as you speak  
-🤖 **OpenAI Whisper Powered** - Industry-leading accuracy  
-🎨 **Stunning UI** - Modern glassmorphism design  
-🌍 **90+ Languages** - Transcribe in any language  
-📱 **Cross-Platform** - Desktop, mobile, anywhere  
+🛡️ **100% Privacy-First** - All AI processing happens offline  
+🎙️ **Speaker Diarization** - Identifies who said what  
+🤖 **AI Summarization** - Automatic key points & action items  
+📄 **Multi-Format Export** - Markdown, PDF, JSON, SRT with metadata  
+⚡ **Enhanced VAD** - Smart voice activity detection  
+⌨️ **Keyboard Shortcuts** - Power user friendly  
+📱 **Desktop Apps** - Tauri-powered native applications
 
 </td>
 <td width="50%">
@@ -73,63 +75,75 @@
 </div>
 
 ```bash
-# 🔥 Step 1: Clone the magic
-git clone https://github.com/marc-254/Verba.devops.git
+# 🔥 Step 1: Clone the repo
+git clone https://github.com/OP-88/Verba.devops.git
 cd Verba.devops
 
-# 🚀 Step 2: Backend power-up
-cd backend && python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# 🚀 Step 2: Backend setup
+cd backend
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# ⚡ Step 3: Frontend lightning
-cd ../frontend && npm install && npm run dev
+# ⚡ Step 3: Start backend server
+uvicorn src.run_fastapi_audio_fixed:app --reload --host 0.0.0.0 --port 8000
+
+# 🎨 Step 4: Frontend setup (new terminal)
+cd frontend
+export VITE_API_URL=http://localhost:8000  # Windows: set VITE_API_URL=http://localhost:8000
+npm install && npm run dev
 ```
 
 <div align="center">
 
-**🎉 That's it! Visit `http://localhost:5173` and start transcribing! 🎉**
+**🎉 Visit `http://localhost:8080` and start transcribing! 🎉**
+
+🌐 **[Try the Live Demo](https://verba-devops-fawn.vercel.app/)** • 📝 **[Read the Docs](./docs/)** • 🐛 **[Report Issues](https://github.com/OP-88/Verba.devops/issues)**
 
 </div>
 
 ---
 
-## 🌟 **Features That'll Blow Your Mind**
+## 🎆 **Complete Feature Set**
 
-<table>
-<tr>
-<td width="33%">
+### 🎙️ **Audio Processing**
+- **⚡ Real-Time Transcription** - Live microphone recording with instant text conversion
+- **📁 File Upload Support** - Process WAV, MP3, M4A, and more audio formats
+- **🔊 Smart VAD** - Enhanced voice activity detection with Silero VAD
+- **🎯 Noise Reduction** - Advanced audio preprocessing for clarity
+- **📊 Audio Visualization** - Real-time waveform and level monitoring
 
-### 🎙️ **Audio Magic**
-- ✨ Real-time transcription
-- 🎵 Multiple format support
-- 🔊 Audio visualization
-- 🎯 Noise reduction
-- 📊 Quality indicators
+### 🧑‍💼 **Speaker Intelligence**
+- **🎙️ Speaker Diarization** - Automatic "who said what" identification using pyannote.audio
+- **📊 Speaker Statistics** - Speaking time analysis and dominant speaker detection
+- **🏷️ Smart Labeling** - Automatic speaker assignment to transcript segments
+- **🔄 Segment Merging** - Intelligent combining of short speech segments
 
-</td>
-<td width="33%">
+### 🤖 **AI-Powered Analysis**
+- **📝 Auto-Summarization** - T5-powered summaries with key points extraction
+- **🎯 Action Items** - Automatic detection of tasks and follow-ups
+- **📈 Sentiment Analysis** - Meeting tone and mood detection
+- **💬 Smart Chat** - AI assistant for transcript queries (hybrid mode)
 
-### 🤖 **AI Superpowers**
-- 🧠 OpenAI Whisper integration
-- 🌍 90+ language detection
-- 🎯 Confidence scoring
-- ⚡ Multiple model options
-- 🔄 Continuous learning
+### 📊 **Export & Sharing**
+- **📄 Multiple Formats** - Markdown, PDF, JSON, TXT, SRT with full metadata
+- **⚙️ Customizable Exports** - Include/exclude metadata, speakers, summaries
+- **📋 One-Click Copy** - Instant clipboard access with formatting
+- **💾 Auto-Save** - SQLite database with full history tracking
 
-</td>
-<td width="33%">
+### ⌨️ **Keyboard Shortcuts**
+- **Ctrl+R** - Start/Stop recording
+- **Ctrl+P** - Pause/Resume recording  
+- **Ctrl+C** - Copy transcription
+- **Ctrl+E** - Edit transcription
+- **Ctrl+S** - Save/Export
+- **Esc** - Cancel current action
 
-### 💎 **User Experience**
-- 🎨 Glassmorphism design
-- 📱 Responsive interface
-- ⌨️ Keyboard shortcuts
-- 🌙 Dark/Light themes
-- 💾 Auto-save magic
-
-</td>
-</tr>
-</table>
+### 📱 **Cross-Platform**
+- **🌐 Web App** - Modern React interface with PWA support
+- **🖥️ Desktop Apps** - Native Tauri applications for Windows, macOS, Linux
+- **📱 Mobile Responsive** - Touch-optimized interface for tablets and phones
+- **☁️ Cloud Deploy** - One-click Vercel deployment ready
 
 ---
 

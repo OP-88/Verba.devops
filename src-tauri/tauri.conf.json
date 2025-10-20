@@ -1,9 +1,9 @@
 {
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:5173",
-    "distDir": "../dist"
+    "beforeDevCommand": "cd frontend && npm run dev",
+    "beforeBuildCommand": "cd frontend && npm run build",
+    "devPath": "http://localhost:8080",
+    "distDir": "../frontend/dist"
   },
   "package": {
     "productName": "Verba AI Transcription",
