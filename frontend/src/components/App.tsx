@@ -628,6 +628,7 @@ export default function App() {
                       disabled={isRecording || backendStatus !== 'connected'}
                       className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                       size="lg"
+                      aria-label="Start audio recording (Ctrl+R)"
                     >
                       <Mic className="h-5 w-5 mr-2" />
                       Start Recording
@@ -638,13 +639,14 @@ export default function App() {
                       variant="destructive"
                       className="flex-1"
                       size="lg"
+                      aria-label="Stop audio recording (Ctrl+R)"
                     >
                       Stop Recording
                     </Button>
                   </div>
                   {isRecording && (
-                    <div className="flex items-center justify-center gap-2 text-red-400 animate-pulse">
-                      <div className="h-3 w-3 bg-red-500 rounded-full" />
+                    <div className="flex items-center justify-center gap-2 text-red-400 animate-pulse" role="status" aria-live="polite">
+                      <div className="h-3 w-3 bg-red-500 rounded-full" aria-hidden="true" />
                       Recording in progress...
                     </div>
                   )}
@@ -661,6 +663,7 @@ export default function App() {
                     onChange={handleUpload}
                     disabled={backendStatus !== 'connected'}
                     className="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:text-white hover:file:from-blue-700 hover:file:to-purple-700 cursor-pointer disabled:opacity-50"
+                    aria-label="Upload audio file for transcription"
                   />
                   {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="space-y-2">
