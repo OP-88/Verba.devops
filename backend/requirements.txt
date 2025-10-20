@@ -21,8 +21,11 @@ soundfile==0.12.1
 librosa==0.10.2
 scipy==1.14.0
 
-# Voice Activity Detection
-webrtcvad==2.0.10
+# Voice Activity Detection - Enhanced with Silero VAD
+webrtcvad==2.0.10  # Fallback VAD
+silero-vad==5.1  # Advanced neural VAD for better noise reduction
+onnx==1.16.0  # For Silero VAD ONNX runtime
+onnxruntime==1.16.3  # Already included for pyannote
 
 # Utilities & Environment - Updated for security
 python-dotenv==1.0.1

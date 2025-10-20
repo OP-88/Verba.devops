@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  verba-backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: verba-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MODE=offline
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=info
+    volumes:
+      - ../backend/data:/app/data
+      - ../backend/logs:/app/logs
+      - verba-models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+    networks:
+      - verba-network
+
+  verba-frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: verba-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000
+    depends_on:
+      verba-backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - verba-network
+
+  # Optional: Redis for caching (if needed for scaling)
+  redis:
+    image: redis:7-alpine
+    container_name: verba-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - verba-redis:/data
+    restart: unless-stopped
+    profiles:
+      - with-cache
+    networks:
+      - verba-network
+
+volumes:
+  verba-models:
+    driver: local
+  verba-redis:
+    driver: local
+
+networks:
+  verba-network:
+    driver: bridge
+
+# Development override
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+---
+version: '3.8'
+
+# docker-compose.dev.yml - Development overrides
+services:
+  verba-backend:
+    build:
+      target: builder  # Use builder stage for development dependencies
+    volumes:
+      - ../backend:/app:delegated
+      - /app/__pycache__
+    environment:
+      - MODE=offline
+      - DEBUG=1
+      - LOG_LEVEL=debug
+      - RELOAD=1
+    command: ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    
+  verba-frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      target: development
+    volumes:
+      - ../src:/app/src:delegated
+      - ../public:/app/public:delegated
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000

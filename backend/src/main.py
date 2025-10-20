@@ -58,6 +58,7 @@ MODE = os.getenv("MODE", "offline")
 model = None
 diarization_pipeline = None
 summarizer = None
+enhanced_transcription_service = None
 
 # Configure logging
 logging.basicConfig(
@@ -247,14 +248,40 @@ def get_smart_prompt(content_type: str, filename: str = "") -> str:
 
 # ==================== IMPROVED TRANSCRIPTION SERVICE ====================
 
-class ImprovedTranscriptionService:
-    """Improved transcription with better model and smart prompting"""
+class EnhancedTranscriptionService:
+    """Enhanced transcription with Silero VAD and advanced noise reduction"""
     
-    def __init__(self, model_size: str = "base"):  # Upgraded from tiny
+    def __init__(self, model_size: str = "base"):
         self.model_size = model_size
         self.model = None
-        self.vad = webrtcvad.Vad(2)
+        
+        # Initialize Enhanced VAD Service
+        if ENHANCED_VAD_AVAILABLE:
+            try:
+                self.vad_service = create_enhanced_vad_service()
+                self.audio_preprocessor = create_audio_preprocessor()
+                logger.info("✅ Enhanced VAD Service initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to initialize Enhanced VAD: {e}")
+                self._initialize_fallback_vad()
+        else:
+            self._initialize_fallback_vad()
+        
         self._load_model()
+    
+    def _initialize_fallback_vad(self):
+        """Initialize fallback WebRTC VAD"""
+        try:
+            import webrtcvad
+            self.vad = webrtcvad.Vad(2)
+            self.vad_service = None
+            self.audio_preprocessor = None
+            logger.info("✅ Fallback WebRTC VAD initialized")
+        except ImportError:
+            logger.error("❌ No VAD service available")
+            self.vad = None
+            self.vad_service = None
+            self.audio_preprocessor = None
         
     def _load_model(self):
         """Load Whisper model"""
@@ -265,7 +292,33 @@ class ImprovedTranscriptionService:
         logger.info(f"✅ Model loaded in {load_time:.2f} seconds")
         
     def detect_voice_activity(self, audio: np.ndarray, sample_rate: int = 16000) -> List[Tuple[float, float]]:
-        """Voice activity detection"""
+        """Enhanced voice activity detection using Silero VAD or fallback"""
+        
+        if self.vad_service:
+            # Use Enhanced Silero VAD
+            try:
+                segments = self.vad_service.detect_speech_segments(
+                    audio, 
+                    return_seconds=True,
+                    min_speech_duration_ms=250,  # Minimum 250ms speech
+                    min_silence_duration_ms=100,  # Minimum 100ms silence
+                    speech_pad_ms=30  # 30ms padding around speech
+                )
+                logger.info(f"✅ Silero VAD detected {len(segments)} voice segments")
+                return segments
+            except Exception as e:
+                logger.warning(f"⚠️ Silero VAD failed, using fallback: {e}")
+        
+        # Fallback to WebRTC VAD
+        if self.vad:
+            return self._webrtc_voice_detection(audio, sample_rate)
+        else:
+            # No VAD available, return entire audio
+            logger.warning("⚠️ No VAD available, processing entire audio")
+            return [(0.0, len(audio) / sample_rate)]
+    
+    def _webrtc_voice_detection(self, audio: np.ndarray, sample_rate: int) -> List[Tuple[float, float]]:
+        """Fallback WebRTC VAD implementation"""
         # Convert to bytes for VAD
         audio_int16 = (audio * 32768).astype(np.int16)
         frame_duration = 30  # ms
@@ -302,7 +355,7 @@ class ImprovedTranscriptionService:
                 else:
                     merged_segments.append((start, end))
                     
-        logger.info(f"✅ Detected {len(merged_segments)} voice segments")
+        logger.info(f"✅ WebRTC VAD detected {len(merged_segments)} voice segments")
         return merged_segments
     
     def transcribe_audio(self, audio_path: str, meeting_title: str = "") -> Dict[str, Any]:
@@ -317,15 +370,34 @@ class ImprovedTranscriptionService:
             logger.info(f"🎵 Loading audio: {audio_path}")
             logger.info(f"🔍 Detected content type: {content_type}")
             
-            # Load audio (fallback to whisper's built-in loading if librosa unavailable)
-            if LIBROSA_AVAILABLE:
-                audio, sample_rate = librosa.load(audio_path, sr=16000)
-                audio_duration = len(audio) / 16000
+            # Enhanced audio loading with preprocessing
+            if self.audio_preprocessor:
+                try:
+                    audio, sample_rate = self.audio_preprocessor.load_and_preprocess_audio(
+                        audio_path, 
+                        apply_noise_reduction=True
+                    )
+                    audio_duration = len(audio) / sample_rate
+                    
+                    # Get audio quality analysis
+                    audio_props = self.audio_preprocessor.detect_audio_properties(audio, sample_rate)
+                    logger.info(f"📊 Audio quality: RMS={audio_props.get('rms_level', 'N/A'):.3f}, "
+                              f"Noise floor={audio_props.get('noise_floor_db', 'N/A'):.1f}dB")
+                              
+                except Exception as e:
+                    logger.warning(f"⚠️ Enhanced preprocessing failed: {e}, using fallback")
+                    audio, sample_rate = librosa.load(audio_path, sr=16000) if LIBROSA_AVAILABLE else (whisper.load_audio(audio_path), 16000)
+                    audio_duration = len(audio) / sample_rate
             else:
-                # Use whisper's audio loading
-                audio = whisper.load_audio(audio_path)
-                audio = whisper.pad_or_trim(audio)
-                audio_duration = len(audio) / 16000
+                # Fallback audio loading
+                if LIBROSA_AVAILABLE:
+                    audio, sample_rate = librosa.load(audio_path, sr=16000)
+                    audio_duration = len(audio) / 16000
+                else:
+                    audio = whisper.load_audio(audio_path)
+                    audio = whisper.pad_or_trim(audio)
+                    audio_duration = len(audio) / 16000
+                    sample_rate = 16000
             
             # Voice activity detection
             logger.info("🔍 Detecting voice segments...")
@@ -398,8 +470,14 @@ class ImprovedTranscriptionService:
                 "processing_time": time.time() - start_time
             }
 
-# Import VAD utilities
-from vad_utils import preprocess_audio
+# Import Enhanced Services
+try:
+    from services.enhanced_transcription_service import create_enhanced_transcription_service
+    from api.websocket_routes import websocket_router, websocket_health_check
+    ENHANCED_SERVICES_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"⚠️ Enhanced services not available: {e}")
+    ENHANCED_SERVICES_AVAILABLE = False
 
 # ==================== FASTAPI APPLICATION ====================
 
@@ -408,14 +486,27 @@ app = FastAPI(title="Verba AI Transcription API", version="2.0.0")
 @app.on_event("startup")
 async def startup_event():
     """Initialize models and services on startup"""
-    global model, diarization_pipeline, summarizer
+    global model, diarization_pipeline, summarizer, enhanced_transcription_service
     
-    # Load Whisper model
+    # Initialize Enhanced Transcription Service
     try:
-        model = whisper.load_model("base")
+        enhanced_transcription_service = EnhancedTranscriptionService(model_size="base")
+        print("✅ Enhanced Transcription Service initialized")
+        
+        # Also keep the basic model for compatibility
+        model = enhanced_transcription_service.model
         print("✅ Whisper model loaded successfully")
     except Exception as e:
-        print(f"❌ Failed to load Whisper model: {e}")
+        print(f"❌ Failed to load Enhanced Transcription Service: {e}")
+        # Fallback to basic model
+        try:
+            model = whisper.load_model("base")
+            enhanced_transcription_service = None
+            print("✅ Fallback Whisper model loaded")
+        except Exception as e2:
+            print(f"❌ Failed to load fallback model: {e2}")
+            model = None
+            enhanced_transcription_service = None
     
     # Load diarization pipeline
     if DIARIZATION_AVAILABLE:
